@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Final Polished Edition</title>
+    <title>Caught! - Magical Star Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 20px rgba(255, 215, 0, 0.6); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -16,23 +16,40 @@
         canvas { display: block; width: 100%; height: 100%; z-index: 1; transition: filter 0.8s ease; }
         
         /* HUD UI */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding: 20px; transition: opacity 0.5s ease; }
-        .stats-container { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px 24px; border-radius: 50px; border: 1px solid var(--glass); width: fit-content; backdrop-filter: blur(5px); }
-        .star-icon { color: var(--gold); font-size: 24px; text-shadow: 0 0 10px var(--gold); animation: pulse 1.5s infinite; }
-        #star-display { color: white; font-size: 24px; font-weight: 900; text-shadow: 2px 2px 4px #000; }
-
-        .progress-wrapper { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 220px; text-align: center; }
-        .progress-label { font-size: 11px; color: white; margin-bottom: 6px; font-weight: 900; letter-spacing: 2.5px; text-shadow: 2px 2px 4px #000; }
-        .progress-bg { width: 100%; height: 14px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.3); }
-        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FF8C00, #FFD700); transition: width 0.4s ease; box-shadow: 0 0 15px var(--gold); }
+        #ui-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; z-index: 10; display: none; padding-top: 25px; 
+            transition: opacity 0.5s ease;
+        }
         
+        .hud-center-stack {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            width: 250px;
+        }
+
+        .stats-container { 
+            display: flex; align-items: center; gap: 12px; 
+            background: rgba(0,0,0,0.5); padding: 8px 24px; border-radius: 50px; 
+            border: 1px solid var(--glass); backdrop-filter: blur(5px); 
+        }
+        .star-icon { color: var(--gold); font-size: 26px; text-shadow: 0 0 10px var(--gold); animation: pulse 1.5s infinite; }
+        #star-display { color: white; font-size: 26px; font-weight: 900; text-shadow: 2px 2px 4px #000; }
+
+        .progress-wrapper { width: 100%; text-align: center; }
+        .progress-label { font-size: 10px; color: white; margin-bottom: 6px; font-weight: 900; letter-spacing: 3px; text-shadow: 2px 2px 4px #000; opacity: 0.8; }
+        .progress-bg { width: 100%; height: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+        
+        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FF8C00, #FFD700); transition: width 0.4s ease; box-shadow: 0 0 10px var(--gold); }
+        #progress-fill.full { animation: milestoneGlow 0.8s ease-in-out infinite alternate; background: linear-gradient(90deg, #FFD700, #FFFFFF); }
+        
+        @keyframes milestoneGlow { from { box-shadow: 0 0 10px var(--gold); filter: brightness(1); } to { box-shadow: 0 0 25px #FFF, 0 0 40px var(--gold); filter: brightness(1.5); } }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* Elegant Overlays */
+        /* Overlays */
         .overlay { 
-            position: absolute; inset: 0; z-index: 20; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; 
             background: rgba(0,0,0,0.55); color: white; text-align: center; padding: 20px; 
             backdrop-filter: blur(12px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -40,22 +57,14 @@
         #end-overlay { background: rgba(0,0,0,0.75); transform: translateY(100%); opacity: 0; pointer-events: none; }
         #end-overlay.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
 
-        .title-text { 
-            font-size: 60px; font-weight: 900; letter-spacing: -2px; color: #FFF9E5; margin: 0; 
-            text-shadow: 0 0 25px rgba(255, 215, 0, 0.4); animation: softFloat 4s ease-in-out infinite;
-        }
-
+        .title-text { font-size: 60px; font-weight: 900; letter-spacing: -2px; color: #FFF9E5; margin: 0; text-shadow: 0 0 25px rgba(255, 215, 0, 0.4); animation: softFloat 4s ease-in-out infinite; }
         .char-grid { display: flex; gap: 15px; margin: 25px 0; }
         .char-card { width: 85px; height: 85px; border-radius: 20px; background: var(--glass); border: 2px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); transform: scale(1.1); box-shadow: var(--glow); }
         .char-card img { width: 60px; height: 60px; }
-
         .world-btn { width: 220px; padding: 14px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: var(--glass); color: white; margin: 8px 0; cursor: pointer; font-weight: 700; font-size: 14px; letter-spacing: 1px; transition: 0.3s; }
         .world-btn.selected { background: #FFF; color: #000; border-color: #FFF; }
-
         .action-btn { padding: 20px 70px; font-size: 22px; border-radius: 50px; border: none; background: #FFF; color: #000; font-weight: 900; margin-top: 35px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: 0.2s; }
-        .action-btn:active { transform: scale(0.95); }
-        
         #splash-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; font-weight: 900; pointer-events: none; z-index: 30; opacity: 0; transition: 0.3s; text-shadow: 0 0 20px var(--gold); }
     </style>
 </head>
@@ -63,10 +72,12 @@
 
     <div id="game-container">
         <div id="ui-layer">
-            <div class="stats-container"><span class="star-icon">★</span><span id="star-display">0</span></div>
-            <div class="progress-wrapper">
-                <div class="progress-label">MILESTONE</div>
-                <div class="progress-bg"><div id="progress-fill"></div></div>
+            <div class="hud-center-stack">
+                <div class="stats-container"><span class="star-icon">★</span><span id="star-display">0</span></div>
+                <div class="progress-wrapper">
+                    <div class="progress-label">MILESTONE</div>
+                    <div class="progress-bg"><div id="progress-fill"></div></div>
+                </div>
             </div>
         </div>
         <div id="splash-text"></div>
@@ -118,6 +129,7 @@ const assets = {
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(), cats: [new Image(), new Image(), new Image()] 
 };
+// Asset Sources
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
@@ -127,7 +139,7 @@ musicTracks.forEach(t => { t.loop = true; t.volume = 0.5; });
 let currentTrackIdx = -1;
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0;
-let catX = 100, catY, catV = 0, catPaws = [], stars = [], fishes = [], rollAngle = 0;
+let catX = 100, catY, catV = 0, catPaws = [], stars = [], fishes = [], particles = [], rollAngle = 0;
 let selectedCatImg = assets.cats[0], selectedBG = 'day', activePower = null, powerTimer = 0;
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
@@ -145,10 +157,41 @@ window.selectWorld = (id, el) => {
     el.classList.add('selected');
 };
 
+// Shape Helper for Magical Stars
+function drawStarShape(x, y, radius, points, innerRadius) {
+    ctx.beginPath();
+    for(let i=0; i<points*2; i++) {
+        let r = i%2===0 ? radius : innerRadius;
+        let angle = (i * Math.PI) / points;
+        ctx.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function createBurst(x, y) {
+    for(let i=0; i<12; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.5) * 14,
+            life: 1.0,
+            rot: Math.random() * Math.PI,
+            vRot: (Math.random() - 0.5) * 0.3,
+            size: Math.random() * 5 + 3
+        });
+    }
+}
+
 function updateUI() {
     starDisplay.innerText = starsCount;
     let progress = (starsCount % 10) / 10 * 100;
-    if (starsCount > 0 && starsCount % 10 === 0) progress = 100;
+    if (starsCount > 0 && starsCount % 10 === 0) {
+        progress = 100;
+        progressFill.classList.add('full');
+    } else {
+        progressFill.classList.remove('full');
+    }
     progressFill.style.width = progress + "%";
 }
 
@@ -174,9 +217,9 @@ function gameOver() {
     if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause();
     canvas.style.filter = "grayscale(0.4) blur(8px)";
     uiLayer.style.opacity = "0";
-    setTimeout(() => {
-        document.getElementById('final-stats').innerText = starsCount;
-        endOverlay.classList.add('visible');
+    setTimeout(() => { 
+        document.getElementById('final-stats').innerText = starsCount; 
+        endOverlay.classList.add('visible'); 
     }, 400);
 }
 
@@ -187,21 +230,48 @@ function update() {
     let speed = (W * 0.01 + (score * 0.08)) * speedMult;
     if (powerTimer > 0) { powerTimer--; if (powerTimer <= 0) activePower = null; }
 
+    // Spawn logic: perfectly centered stars
     if (frames % Math.floor(GAME_CONFIG.spawnRate / speedMult) === 0) {
         let gap = Math.random() * 80 + 130; 
         let h = Math.random() * (H - gap - 240) + 120;
-        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
+        let spawnX = W + 100;
+        catPaws.push({ x: spawnX, yT: h, yB: h + gap, passed: false });
         
-        // Spaced Spawning Logic
+        // Stars/Fish centered in the gap
         if (starsCount > 0 && (starsCount + 1) % 10 === 0 && fishes.length === 0 && !activePower) {
-             fishes.push({ x: W + 550, y: h + (gap / 2), collected: false });
+             fishes.push({ x: spawnX + 450, baseYa: h + (gap / 2), y: h + (gap / 2), collected: false });
         } else {
-             stars.push({ x: W + 350, y: h + (gap / 2), collected: false, spin: 0 });
+             stars.push({ x: spawnX + 250, y: h + (gap / 2), collected: false, spin: 0 });
         }
     }
 
+    // Move objects
+    catPaws.forEach(p => { p.x -= speed; });
+    stars.forEach(s => {
+        s.x -= speed;
+        if (activePower === 'MAGNET') {
+            s.spin += 0.5; let dx = catX - s.x; let dy = catY - s.y; let dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist < 450) { let force = (450 - dist) / 450; s.x += dx * 0.07 * force; s.y += dy * 0.07 * force; }
+        } else { s.spin += 0.05; }
+        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) { 
+            s.collected = true; starsCount++; createBurst(s.x, s.y); updateUI(); updateMusic(); 
+        }
+    });
+
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.rot += p.vRot; p.life -= 0.025;
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Fish swim motion
+    fishes.forEach(f => { 
+        f.x -= speed; 
+        f.y = f.baseYa + Math.sin(frames * 0.05) * 20; 
+        if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) { f.collected = true; activatePowerUp(); } 
+    });
+
+    // Collisions
     catPaws.forEach(p => {
-        p.x -= speed;
         if (catX + 18 > p.x + 140 && catX - 18 < p.x + 260) {
             if (catY - 18 < p.yT || catY + 18 > p.yB) {
                 if (activePower === 'SHIELD') { activePower = null; powerTimer = 0; p.passed = true; }
@@ -209,30 +279,6 @@ function update() {
             }
         }
         if (!p.passed && p.x + 300 < catX) { score++; p.passed = true; }
-    });
-
-    stars.forEach(s => {
-        s.x -= speed;
-        // Refined Magnet Physics
-        if (activePower === 'MAGNET') {
-            s.spin += 0.5;
-            let dx = catX - s.x; let dy = catY - s.y;
-            let dist = Math.sqrt(dx*dx+dy*dy);
-            if (dist < 450) { 
-                let force = (450 - dist) / 450; 
-                s.x += dx * 0.07 * force; s.y += dy * 0.07 * force; 
-            }
-        } else { s.spin += 0.05; }
-        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) {
-            s.collected = true; starsCount++; updateUI(); updateMusic();
-        }
-    });
-
-    fishes.forEach(f => {
-        f.x -= speed;
-        if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) {
-            f.collected = true; activatePowerUp();
-        }
     });
 
     catV += GAME_CONFIG.gravity; catY += catV;
@@ -255,41 +301,22 @@ function draw() {
         });
         stars.forEach(s => {
             if (s.collected) return;
-            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
-            ctx.shadowBlur = 20; ctx.shadowColor = "gold"; ctx.fillStyle = "#FFD700"; ctx.beginPath();
-            for(let i=0; i<5; i++) { 
-                ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*16, -Math.sin((18+i*72)*Math.PI/180)*16); 
-                ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8, -Math.sin((54+i*72)*Math.PI/180)*8); 
-            }
-            ctx.closePath(); ctx.fill(); ctx.restore();
+            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.shadowBlur = 20; ctx.shadowColor = "gold"; ctx.fillStyle = "#FFD700";
+            drawStarShape(0, 0, 16, 5, 7); ctx.restore();
         });
-        fishes.forEach(f => { 
-            if (!f.collected) { 
-                ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = "white"; 
-                ctx.drawImage(assets.fish, f.x - 35, f.y - 35, 70, 70); ctx.restore(); 
-            } 
+        particles.forEach(p => {
+            ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = "gold"; ctx.shadowBlur = 8; ctx.shadowColor = "white";
+            drawStarShape(0, 0, p.size, 5, p.size/2); ctx.restore();
         });
-        if (activePower) { 
-            ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 52, 0, Math.PI * 2); 
-            ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.9)"; 
-            ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.restore(); 
-        }
-        ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle);
-        ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
+        fishes.forEach(f => { if (!f.collected) { ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = "white"; ctx.drawImage(assets.fish, f.x - 35, f.y - 35, 70, 70); ctx.restore(); } });
+        if (activePower) { ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 52, 0, Math.PI * 2); ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.restore(); }
+        ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
     }
 }
 
 function loop() { update(); draw(); requestAnimationFrame(loop); }
-document.getElementById('start-trigger').onclick = () => { 
-    gameState = 'PLAY'; 
-    menuOverlay.style.opacity='0'; 
-    setTimeout(()=>menuOverlay.style.display='none', 600); 
-    uiLayer.style.display = 'block'; 
-    updateMusic(); updateUI(); 
-};
-window.addEventListener('touchstart', (e) => { 
-    if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } 
-}, {passive:false});
+document.getElementById('start-trigger').onclick = () => { gameState = 'PLAY'; menuOverlay.style.opacity='0'; setTimeout(()=>menuOverlay.style.display='none', 600); uiLayer.style.display = 'block'; updateMusic(); updateUI(); };
+window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } }, {passive:false});
 loop();
 </script>
 </body>

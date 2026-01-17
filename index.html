@@ -2,29 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Caught! - Enhanced Menu Visibility</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Caught! - Full Mobile Edition</title>
     <style>
         :root { -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #eee; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
-        /* Container adapts to viewport while keeping a square area */
-        #game-container { position: relative; width: min(600px, 95vw); height: min(600px, 95vw); max-height: 95vh; border: 5px solid #333; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); background: rgba(255,255,255,0.6); }
-        canvas { position: absolute; top: 0; left: 0; cursor: pointer; z-index: 1; width: 100%; height: 100%; display:block; }
-        #seasonal-gif { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; opacity: 0.15; z-index: 5; pointer-events: none; 
-            mix-blend-mode: multiply; display: none; 
-        }
-        /* Mobile start overlay to unlock audio */
-        #start-overlay { position: absolute; inset: 0; z-index: 20; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); color: white; font-weight: 700; font-size: 20px; text-align:center; padding: 20px; }
-        #start-overlay button { padding: 12px 20px; font-size: 18px; border-radius: 10px; border: none; background: #DAA520; color: #222; }
+        body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #fff; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; z-index: 1; }
+        #seasonal-gif { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; z-index: 5; pointer-events: none; mix-blend-mode: multiply; display: none; }
+        #start-overlay { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; }
+        #start-overlay button { padding: 18px 45px; font-size: 20px; border-radius: 50px; border: none; background: #DAA520; color: #fff; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <canvas id="gameCanvas" width="600" height="600" aria-label="Caught game canvas"></canvas>
+        <canvas id="gameCanvas"></canvas>
         <img id="seasonal-gif" src="" alt="seasonal-effect">
-        <div id="start-overlay" style="display:none;"><div><div style="margin-bottom:12px">Tap to enable sound and start</div><button id="start-button">Tap to Start</button></div></div>
+        <div id="start-overlay">
+            <div>
+                <h1 style="font-size: 40px; margin-bottom: 10px;">CAUGHT!</h1>
+                <p style="margin-bottom: 25px; opacity: 0.7;">Mobile Character & World Select</p>
+                <button id="start-button">START SESSION</button>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -34,394 +35,230 @@ const gifElement = document.getElementById('seasonal-gif');
 const startOverlay = document.getElementById('start-overlay');
 const startButton = document.getElementById('start-button');
 
+let W, H, bgX = 0;
+function resize() {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
 // --- ASSETS ---
 const assets = {
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(),
     cat_default: new Image(), cat_black: new Image(), cat_tabby: new Image()
 };
+assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
+assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
+assets.cat_default.src = 'cat.png'; assets.cat_black.src = 'cat_black.png'; assets.cat_tabby.src = 'cat_tabby.png';
 
-// Helper that tries a few common filename variants (case-insensitive fallback for GitHub Pages)
-function setImageSrc(img, srcBase) {
-    const variants = [srcBase, srcBase.toLowerCase(), srcBase.toUpperCase()];
-    let tried = 0;
-    img.onerror = () => {
-        tried++;
-        if (tried < variants.length) img.src = variants[tried]; else console.warn('Image failed to load:', srcBase);
-    };
-    img.src = variants[0];
-}
-
-setImageSrc(assets.day, 'day.png'); setImageSrc(assets.afternoon, 'afternoon.png'); setImageSrc(assets.evening, 'evening.png');
-setImageSrc(assets.paw, 'paw.png'); setImageSrc(assets.fish, 'fish.png');
-setImageSrc(assets.cat_default, 'cat.png'); setImageSrc(assets.cat_black, 'cat_black.png'); setImageSrc(assets.cat_tabby, 'cat_tabby.png');
-
-const musicTracks = [new Audio(), new Audio(), new Audio()];
 const musicFiles = ['spring.mp3','summer.mp3','autumn.mp3'];
-musicTracks.forEach((t,i) => {
-    t.src = musicFiles[i]; t.loop = true; t.preload = 'auto'; t.volume = 0; t.setAttribute('playsinline',''); t.crossOrigin = 'anonymous';
-    t.addEventListener('error', ()=>console.warn('Audio failed to load', musicFiles[i]));
-});
+const musicTracks = musicFiles.map(f => { let a = new Audio(f); a.loop = true; a.volume = 0; return a; });
 const timeGifs = ['spring.gif', 'summer.gif', 'autumn.gif'];
 
 // --- STATE ---
 let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0, lastCycleIdx = -1;
-let highScore = localStorage.getItem('caughtHighScore') || 0;
-let catY = 300, catV = 0, catPaws = [], stars = [], powerUps = [], particles = [], rollAngle = 0;
-let selectedCatImg = assets.cat_default, mouseX = 0, mouseY = 0;
-let activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
-let selectedBG = 'day', lastPowerType = null; 
+let catX = 80, catY = H/2, catV = 0, catPaws = [], stars = [], powerUps = [], particles = [], rollAngle = 0;
+let selectedCatImg = assets.cat_default, activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
+let selectedBG = 'day', lastTime = performance.now();
 
-const charCards = [
-    { x: 150, y: 200, img: assets.cat_default, hoverAngle: 0 },
-    { x: 300, y: 200, img: assets.cat_black, hoverAngle: 0 },
-    { x: 450, y: 200, img: assets.cat_tabby, hoverAngle: 0 }
+const charOptions = [
+    { id: 'default', img: assets.cat_default, x: 0 },
+    { id: 'black', img: assets.cat_black, x: 0 },
+    { id: 'tabby', img: assets.cat_tabby, x: 0 }
 ];
 
-const bgOptions = [
-    { x: 150, y: 400, id: 'day', label: 'MORNING' },
-    { x: 300, y: 400, id: 'afternoon', label: 'NOON' },
-    { x: 450, y: 400, id: 'evening', label: 'NIGHT' }
+const worldOptions = [
+    { id: 'day', label: 'MORNING' },
+    { id: 'afternoon', label: 'NOON' },
+    { id: 'evening', label: 'NIGHT' }
 ];
 
-// --- HELPERS ---
-function drawStar(x, y, points, outer, inner) {
-    ctx.beginPath();
-    for (let i = 0; i < points * 2; i++) {
-        let r = i % 2 === 0 ? outer : inner;
-        let a = (Math.PI * i) / points;
-        ctx.lineTo(x + r * Math.sin(a), y - r * Math.cos(a));
-    }
-    ctx.closePath(); ctx.fill();
-}
-
-function createGoldenBurst(x, y) {
-    for(let i=0; i<15; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 14,
-            vy: (Math.random() - 0.5) * 14,
-            life: 1.0,
-            size: Math.random() * 4 + 2,
-            color: Math.random() > 0.5 ? '#FFD700' : '#FFFACD'
-        });
-    }
+// --- LOGIC ---
+function createBurst(x, y) {
+    for(let i=0; i<12; i++) particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 1, size: 3, color: '#FFD700' });
 }
 
 function updateMasterSync() {
-    let cycleIdx = Math.floor(starsCount / 20) % 3;
-    if (cycleIdx !== lastCycleIdx && gameState === 'PLAY') {
-        gifElement.src = timeGifs[cycleIdx];
-        gifElement.style.display = 'block';
-        lastCycleIdx = cycleIdx;
+    let idx = Math.floor(starsCount / 20) % 3;
+    if (idx !== lastCycleIdx && gameState === 'PLAY') {
+        gifElement.src = timeGifs[idx]; gifElement.style.display = 'block'; lastCycleIdx = idx;
     }
-    musicTracks.forEach((track, i) => {
-        if (gameState === 'PLAY' && i === cycleIdx) {
-            if (track.paused) track.play().catch(()=>{});
-            track.volume = Math.min(track.volume + 0.01, 0.4);
+    musicTracks.forEach((t, i) => {
+        if (gameState === 'PLAY' && i === idx) {
+            if (t.paused) t.play().catch(()=>{});
+            t.volume = Math.min(t.volume + 0.02, 0.4);
         } else {
-            track.volume = Math.max(track.volume - 0.02, 0);
-            if (track.volume === 0) track.pause();
+            t.volume = Math.max(t.volume - 0.05, 0);
+            if (t.volume === 0 && !t.paused) { t.pause(); t.currentTime = 0; }
         }
     });
 }
 
-function spawnPowerUp() {
-    const types = ['SHIELD', 'MAGNET', 'SLOW'];
-    let newType = types[Math.floor(Math.random() * types.length)];
-    if (newType === lastPowerType) newType = types[Math.floor(Math.random() * types.length)];
-    lastPowerType = newType;
-    powerUps.push({ x: 850, baseY: Math.random() * 300 + 150, y: 300, type: newType, floatOffset: Math.random() * Math.PI * 2 });
-}
-
-// Adjust the speed scaling to 40%
-let lastTime = performance.now();
-
-function loop() {
-    const currentTime = performance.now();
-    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
-    lastTime = currentTime;
-
-    update(deltaTime); // Pass deltaTime to update
-    draw();
-    requestAnimationFrame(loop);
-}
-
-function update(deltaTime) {
-    if (gameState === 'MAIN_MENU') {
-        frames++;
-        charCards.forEach(c => {
-            let h = (mouseX > c.x-45 && mouseX < c.x+45 && mouseY > c.y-45 && mouseY < c.y+45);
-            if (h) c.hoverAngle += 0.06; else c.hoverAngle *= 0.9;
-        });
-        return;
-    }
+function update(dt) {
+    if (gameState === 'MAIN_MENU') { frames++; return; }
     if (gameState !== 'PLAY') return;
 
     frames++;
     updateMasterSync();
-    let baseSpeed = (4.2 + (score * 0.08)) * 0.4 * deltaTime * 60; // Scale by deltaTime and set speed to 40%
-    let speed = activePower === 'SLOW' ? baseSpeed * 0.5 : baseSpeed;
-    rollAngle += 0.04 * deltaTime * 60;
+
+    let speed = (W * 0.01 + (score * 0.1)) * (activePower === 'SLOW' ? 0.5 : 1);
+    bgX = (bgX - (speed * 0.2)) % W; // Parallax effect
+    rollAngle += 0.15;
 
     if (powerTimer > 0) powerTimer--; else activePower = null;
     if (splashTimer > 0) splashTimer--;
 
-    // Adjust the interval for spawning cat paw pillars to be half
-    if (frames % Math.round(100 / 0.4 / 2) === 0) { // Halve the interval
-        let gapSize = Math.random() * 70 + 130;
-        let h = Math.random() * (500 - gapSize) + 50;
-        catPaws.push({ x: 650, yT: h, yB: h + gapSize, passed: false });
-        stars.push({ x: 800, y: h + (gapSize/2), collected: false });
+    if (frames % 110 === 0) {
+        let gap = H * 0.32, h = Math.random() * (H - gap - 250) + 125, pX = W + 100;
+        catPaws.push({ x: pX, yT: h, yB: h + gap, passed: false });
+        stars.push({ x: pX + 75, y: h + gap/2, collected: false });
+        if (starsCount > 0 && starsCount % 10 === 0 && powerUps.length === 0) {
+            powerUps.push({ x: W + 500, y: Math.random()*(H-200)+100, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
+        }
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
-        if (120 + 20 > p.x + 115 && 120 - 20 < p.x + 185) {
-            if ((catY - 20 < p.yT || catY + 20 > p.yB) && activePower !== 'SHIELD') triggerGameOver();
+        if (catX + 30 > p.x && catX - 30 < p.x + 150) {
+            if ((catY - 40 < p.yT || catY + 40 > p.yB) && activePower !== 'SHIELD') triggerGameOver();
         }
-        if (!p.passed && p.x + 150 < 120) { score++; p.passed = true; }
+        if (!p.passed && p.x + 150 < catX) { score++; p.passed = true; }
     });
 
     stars.forEach(s => {
         s.x -= speed;
-        let d = Math.sqrt((120-s.x)**2 + (catY-s.y)**2);
-        if (activePower === 'MAGNET' && d < 220) { s.x += (120-s.x)*0.12; s.y += (catY-s.y)*0.12; }
-        if (!s.collected && d < 40) { 
-            s.collected = true; starsCount++; createGoldenBurst(s.x, s.y);
-            if (starsCount > 0 && starsCount % 10 === 0) spawnPowerUp();
-        }
+        let d = Math.sqrt((catX-s.x)**2 + (catY-s.y)**2);
+        if (activePower === 'MAGNET' && d < 250) { s.x += (catX-s.x)*0.12; s.y += (catY-s.y)*0.12; }
+        if (!s.collected && d < 55) { s.collected = true; createBurst(s.x, s.y); starsCount++; }
     });
 
     powerUps.forEach(pu => {
-        pu.x -= speed; pu.y = pu.baseY + Math.sin(frames * 0.05 + pu.floatOffset) * 20; 
-        if (Math.sqrt((120-pu.x)**2 + (catY-pu.y)**2) < 55) { 
-            activePower = pu.type; powerTimer = 480; splashText = pu.type; splashTimer = 90; pu.x = -1000; 
+        pu.x -= speed;
+        if (Math.sqrt((catX-pu.x)**2 + (catY-pu.y)**2) < 65) {
+            activePower = pu.type; powerTimer = 480; splashText = pu.type; splashTimer = 90; pu.x = -2000;
         }
     });
 
-    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.025; });
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; });
     particles = particles.filter(p => p.life > 0);
-    catPaws = catPaws.filter(p => p.x > -400);
-    stars = stars.filter(s => s.x > -50 && !s.collected);
-    catV += 0.4; catY += catV;
-    if (catY > 600 || catY < 0) triggerGameOver();
+    catV += 0.65; catY += catV;
+    if (catY > H + 50 || catY < -50) triggerGameOver();
 }
 
 function triggerGameOver() {
-    gameState = 'GAMEOVER'; gifElement.style.display = 'none'; lastCycleIdx = -1; activePower = null;
-    if (score > highScore) { highScore = score; localStorage.setItem('caughtHighScore', highScore); }
+    gameState = 'GAMEOVER';
     musicTracks.forEach(t => { t.pause(); t.currentTime = 0; t.volume = 0; });
 }
 
+// --- DRAWING ---
 function draw() {
-    ctx.clearRect(0, 0, 600, 600);
+    ctx.clearRect(0, 0, W, H);
     
-    let bgImg = assets[selectedBG];
-    if (bgImg.complete) { 
-        ctx.save(); 
-        // Brighter BG in Menu, subtle in Game (made more transparent)
-        ctx.globalAlpha = (gameState === 'MAIN_MENU') ? 0.8 : 0.6; 
-        ctx.drawImage(bgImg, 0, 0, 600, 600); 
-        ctx.restore(); 
+    // Parallax BG
+    if (assets[selectedBG].complete) {
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
+        ctx.drawImage(assets[selectedBG], bgX + W, 0, W, H);
+        ctx.globalAlpha = 1;
     }
 
-    ctx.globalAlpha = 1.0; 
+    if (gameState === 'MAIN_MENU') {
+        ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "#333"; ctx.textAlign="center"; ctx.font="bold 32px Arial";
+        ctx.fillText("CHOOSE YOUR CAT", W/2, H*0.2);
+        
+        charOptions.forEach((opt, i) => {
+            let x = W/2 + (i-1)*100; opt.x = x;
+            ctx.save(); ctx.translate(x, H*0.35);
+            if (selectedCatImg === opt.img) {
+                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 4; ctx.strokeRect(-40, -40, 80, 80);
+            }
+            ctx.drawImage(opt.img, -35, -35, 70, 70); ctx.restore();
+        });
 
-    if (gameState !== 'MAIN_MENU') {
-        // Gameplay objects
-        ctx.save();
-        if (activePower === 'SHIELD') ctx.globalAlpha = 0.5;
-        catPaws.forEach(p => { 
-            if (assets.paw.complete) { 
-                ctx.drawImage(assets.paw, p.x, p.yB, 300, 450); 
-                ctx.save(); ctx.translate(p.x + 150, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -150,0,300,450); ctx.restore(); 
-            } 
+        ctx.fillText("CHOOSE WORLD", W/2, H*0.55);
+        worldOptions.forEach((opt, i) => {
+            let y = H*0.65 + i*50; opt.y = y;
+            ctx.fillStyle = selectedBG === opt.id ? "#DAA520" : "#777";
+            ctx.font = selectedBG === opt.id ? "bold 24px Arial" : "20px Arial";
+            ctx.fillText(opt.label, W/2, y);
+        });
+        
+        ctx.fillStyle = "#333"; ctx.font = "bold 20px Arial";
+        ctx.fillText("TAP START TO PLAY", W/2, H*0.9);
+    }
+
+    if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
+        // Paws & Stars logic same as before...
+        ctx.save(); if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        catPaws.forEach(p => {
+            ctx.drawImage(assets.paw, p.x, p.yB, 150, H);
+            ctx.save(); ctx.translate(p.x + 75, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -75, 0, 150, H); ctx.restore();
         }); ctx.restore();
 
         stars.forEach(s => {
-            ctx.save(); ctx.translate(s.x, s.y); 
-            let rotationSpeed = activePower === 'MAGNET' ? frames * 0.2 : frames * 0.05;
-            ctx.rotate(rotationSpeed); ctx.fillStyle = '#FFD700'; 
-            ctx.shadowBlur = activePower === 'MAGNET' ? 20 : 10; ctx.shadowColor = '#DAA520'; 
-            drawStar(0, 0, 5, 12, 6); ctx.restore();
+            ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "#FFD700"; ctx.fillStyle = "#FFD700";
+            ctx.translate(s.x, s.y); ctx.rotate(frames * 0.05);
+            ctx.beginPath(); for(let i=0;i<10;i++){let r=i%2?18:9;let a=Math.PI*i/5;ctx.lineTo(r*Math.sin(a),-r*Math.cos(a));}
+            ctx.closePath(); ctx.fill(); ctx.restore();
         });
 
-        particles.forEach(p => {
-            ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
-        });
+        particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
+        powerUps.forEach(pu => ctx.drawImage(assets.fish, pu.x-35, pu.y-25, 70, 50));
 
-        powerUps.forEach(pu => { if (assets.fish.complete) ctx.drawImage(assets.fish, pu.x-35, pu.y-27, 70, 55); });
+        ctx.save(); ctx.translate(catX, catY);
+        if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke(); }
+        ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
 
-        ctx.save(); ctx.translate(120, catY);
-        if (activePower) {
-            let isVisible = true;
-            if (powerTimer < 120 && Math.floor(frames / 5) % 2 === 0) isVisible = false;
-            if (isVisible) {
-                ctx.save();
-                // Shiny white bubble: soft radial fill + bright stroke + highlight
-                const grad = ctx.createRadialGradient(0, 0, 12, 0, 0, 65);
-                grad.addColorStop(0, 'rgba(255,255,255,0.95)');
-                grad.addColorStop(0.6, 'rgba(255,255,255,0.6)');
-                grad.addColorStop(1, 'rgba(255,255,255,0.15)');
-                ctx.fillStyle = grad;
-                ctx.beginPath(); ctx.arc(0, 0, 55, 0, Math.PI*2); ctx.fill();
-
-                ctx.shadowColor = 'rgba(255,255,255,0.9)'; ctx.shadowBlur = 18;
-                ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-                ctx.beginPath(); ctx.arc(0, 0, 55, 0, Math.PI*2); ctx.stroke();
-
-                // small glossy highlight
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'rgba(255,255,255,0.8)';
-                ctx.beginPath(); ctx.ellipse(-18, -18, 18, 10, Math.PI/4, 0, Math.PI*2); ctx.fill();
-                ctx.restore();
-            }
-        }
-        ctx.rotate(rollAngle); if (selectedCatImg.complete) ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
-        
-        ctx.fillStyle = "#333"; ctx.font = "bold 22px Arial"; ctx.textAlign = "left"; ctx.fillText(`Stars: ${starsCount}`, 20, 40);
-
-        // Draw progress bar to show stars required for the next power-up
-        const starsForPowerUp = 10 - (starsCount % 10);
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 16px Arial";
-        ctx.textAlign = "right";
-        ctx.fillText(`Next Power-Up: ${starsForPowerUp} stars`, 580, 30);
-
-        ctx.fillStyle = "#FFD700";
-        ctx.fillRect(480, 40, (100 - starsForPowerUp * 10), 10); // Progress bar
-        ctx.strokeStyle = "#333";
-        ctx.strokeRect(480, 40, 100, 10); // Border
+        ctx.fillStyle = "#333"; ctx.font = "bold 22px Arial"; ctx.textAlign="left";
+        ctx.fillText(`Stars: ${starsCount}`, 20, 50);
     }
 
-    if (gameState === 'MAIN_MENU') {
-        // Overlay for Menu Text (more transparent)
-        ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.fillRect(0,0,600,600);
-        
-        ctx.fillStyle = "#333"; ctx.textAlign="center"; 
-        ctx.font = "bold 60px Arial"; ctx.fillText("CAUGHT!", 300, 100);
-        
-        // Cat Selection
-        ctx.font = "bold 18px Arial"; ctx.fillText("SELECT YOUR CAT", 300, 150);
-        charCards.forEach(c => {
-            let h = (mouseX > c.x-45 && mouseX < c.x+45 && mouseY > c.y-45 && mouseY < c.y+45);
-            ctx.save(); ctx.translate(c.x, c.y);
-            if (h || selectedCatImg === c.img) { ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 4; ctx.strokeRect(-45, -45, 90, 90); }
-            ctx.rotate(c.hoverAngle); if (c.img.complete) ctx.drawImage(c.img, -35, -35, 70, 70); ctx.restore();
-        });
-
-        // Background Selection Section
-        ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.fillRect(50, 335, 500, 100); // Visual Bar for labels
-        ctx.fillStyle = "#333"; ctx.font = "bold 18px Arial"; ctx.fillText("CHOOSE YOUR WORLD", 300, 325);
-        
-        bgOptions.forEach(opt => {
-            let h = (mouseX > opt.x-60 && mouseX < opt.x+60 && mouseY > opt.y-30 && mouseY < opt.y+30);
-            let isSelected = (selectedBG === opt.id);
-            
-            ctx.save();
-            ctx.translate(opt.x, opt.y);
-            
-            // Interaction logic
-            ctx.fillStyle = isSelected ? "#DAA520" : (h ? "#000" : "rgba(0,0,0,0.5)");
-            ctx.font = isSelected ? "bold 22px Arial" : "bold 16px Arial";
-            
-            if (isSelected) {
-                ctx.shadowBlur = 10; ctx.shadowColor = "white";
-                ctx.fillText("● " + opt.label + " ●", 0, 5);
-            } else {
-                ctx.fillText(opt.label, 0, 5);
-            }
-            ctx.restore();
-        });
-
-        // Start Button
-        ctx.fillStyle = "#222"; 
-        ctx.font = "bold 40px Arial"; 
-        ctx.fillText("START GAME", 300, 530);
-    } 
-    
     if (gameState === 'GAMEOVER') {
-        ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillRect(0,0,600,600); ctx.fillStyle = "#333"; ctx.textAlign = "center";
-        ctx.font = "bold 65px Arial"; ctx.fillText("CAUGHT!", 300, 210);
-        ctx.font = "26px Arial"; ctx.fillText(`Score: ${score}`, 300, 280); ctx.fillText(`Stars: ${starsCount}`, 300, 320);
-        ctx.fillStyle = "#DAA520"; ctx.fillText(`Best: ${highScore}`, 300, 380);
-        ctx.fillStyle = "#333"; ctx.font = "bold 22px Arial"; ctx.fillText("CLICK FOR MENU", 300, 500);
+        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "#fff"; ctx.textAlign="center"; ctx.font="bold 40px Arial"; ctx.fillText("CAUGHT!", W/2, H/2 - 40);
+        ctx.font="22px Arial"; ctx.fillText("TAP TO RE-SELECT", W/2, H/2 + 40);
     }
-    if (gameState === 'PLAY' && splashTimer > 0) {
-        ctx.save(); ctx.textAlign="center"; ctx.font="bold 60px Arial"; ctx.fillStyle="#333"; ctx.shadowBlur=15; ctx.shadowColor="white"; ctx.fillText(splashText, 300, 300); ctx.restore();
+
+    if (splashTimer > 0) {
+        ctx.fillStyle = "#333"; ctx.font = "bold 60px Arial"; ctx.textAlign="center"; ctx.fillText(splashText, W/2, H/2);
     }
 }
 
-function toLocalCoords(clientX, clientY) {
-    const r = canvas.getBoundingClientRect();
-    const lx = (clientX - r.left) * (600 / r.width);
-    const ly = (clientY - r.top) * (600 / r.height);
-    return { x: lx, y: ly };
+function loop(t) {
+    update((t - lastTime)/1000); draw(); lastTime = t; requestAnimationFrame(loop);
 }
 
-canvas.addEventListener('mousemove', (e) => { const p = toLocalCoords(e.clientX, e.clientY); mouseX = p.x; mouseY = p.y; });
-canvas.addEventListener('mousedown', () => {
+function handleInput(e) {
+    if (e.type === 'touchstart') e.preventDefault();
+    const touch = e.touches ? e.touches[0] : e;
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left) * (W / rect.width);
+    const y = (touch.clientY - rect.top) * (H / rect.height);
+
     if (gameState === 'MAIN_MENU') {
-        charCards.forEach(c => { if (mouseX > c.x-45 && mouseX < c.x+45 && mouseY > c.y-45 && mouseY < c.y+45) selectedCatImg = c.img; });
-        bgOptions.forEach(opt => { if (mouseX > opt.x-60 && mouseX < opt.x+60 && mouseY > opt.y-30 && mouseY < opt.y+30) selectedBG = opt.id; });
-        if (mouseX > 150 && mouseX < 450 && mouseY > 480 && mouseY < 560) { startFromMenu(); }
-    } else if (gameState === 'PLAY') { catV = -7.4; } else if (gameState === 'GAMEOVER') { gameState = 'MAIN_MENU'; }
-});
-
-function startFromMenu() {
-    gameState = 'PLAY'; score=0; starsCount=0; catPaws=[]; stars=[]; powerUps=[]; lastCycleIdx = -1; particles=[]; catY=300; catV=0;
-    hideStartOverlay();
-}
-
-// Responsive canvas handling (keeps logical coordinate system at 600x600 but scales for DPR)
-function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    const size = Math.min(600, Math.min(window.innerWidth * 0.95, window.innerHeight * 0.95));
-    canvas.style.width = size + 'px';
-    canvas.style.height = size + 'px';
-    canvas.width = 600 * dpr;
-    canvas.height = 600 * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-// Restore the original game container dimensions
-const gameContainer = document.getElementById('game-container');
-gameContainer.style.width = 'min(600px, 95vw)';
-gameContainer.style.height = 'min(600px, 95vw)';
-gameContainer.style.maxHeight = '95vh';
-
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Mobile/audio unlock overlay logic
-function showStartOverlay() {
-    if ('ontouchstart' in window || /Mobi|Android/i.test(navigator.userAgent)) {
-        startOverlay.style.display = 'flex';
+        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 40 && Math.abs(y - H*0.35) < 40) selectedCatImg = opt.img; });
+        worldOptions.forEach(opt => { if (Math.abs(x - W/2) < 100 && Math.abs(y - opt.y) < 25) selectedBG = opt.id; });
+    } else if (gameState === 'PLAY') {
+        catV = -11;
+    } else if (gameState === 'GAMEOVER') {
+        gameState = 'MAIN_MENU';
     }
 }
-function hideStartOverlay() { startOverlay.style.display = 'none'; }
 
-startButton.addEventListener('click', () => {
-    // Try to play & pause each track to satisfy browsers' gesture requirement
-    musicTracks.forEach(t => { t.play().then(()=>{ t.pause(); t.currentTime = 0; }).catch(()=>{}); });
-    hideStartOverlay();
-});
+window.addEventListener('touchstart', handleInput, {passive: false});
+window.addEventListener('mousedown', handleInput);
 
-// Show overlay on mobile at load
-showStartOverlay();
-
-function loop() {
-    const currentTime = performance.now();
-    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
-    lastTime = currentTime;
-
-    update(deltaTime); // Pass deltaTime to update
-    draw();
+startButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
+    startOverlay.style.display = 'none';
+    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; particles = []; score = 0; starsCount = 0; lastCycleIdx = -1;
+    gameState = 'PLAY';
     requestAnimationFrame(loop);
-}
-
-loop();
+});
 </script>
 </body>
 </html>

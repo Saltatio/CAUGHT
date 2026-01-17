@@ -122,7 +122,10 @@ assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cat
 
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
-tracks.forEach(t => { t.loop = true; t.volume = 0.5; });
+
+// Set Volumes
+tracks.forEach(t => { t.loop = true; t.volume = 0.2; }); 
+meowSfx.volume = 0.8; 
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
@@ -155,7 +158,13 @@ function drawStar(x, y, r, p, ir) {
 }
 
 function createBurst(x, y) {
-    for(let i=0; i<12; i++) particles.push({ x, y, vx: (Math.random()-0.5)*14, vy: (Math.random()-0.5)*14, life: 1.0, rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.3, s: Math.random()*5+3 });
+    for(let i=0; i<12; i++) {
+        particles.push({ 
+            x, y, vx: (Math.random()-0.5)*14, vy: (Math.random()-0.5)*14, 
+            life: 1.0, rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.3, 
+            baseSize: Math.random()*5+3 
+        });
+    }
 }
 
 function updateUI() {
@@ -175,7 +184,8 @@ function updateMusic() {
 }
 
 function activatePower() {
-    meowSfx.play().catch(()=>{}); // Trigger Meow sound
+    meowSfx.currentTime = 0;
+    meowSfx.play().catch(()=>{}); 
     const types = ['SHIELD', 'MAGNET', 'SLOW'];
     activePower = types[Math.floor(Math.random()*3)]; pTimer = CONFIG.powerTime;
     splashUI.innerText = activePower; splashUI.style.opacity = '1';
@@ -214,7 +224,13 @@ function update() {
     });
 
     particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.rot += p.vr; p.life -= 0.025; if(p.life <= 0) particles.splice(i, 1); });
-    fishes.forEach(f => { f.x -= speed; f.y = f.by + Math.sin(frames*0.05)*25; if(!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) { f.collected = true; activatePower(); } });
+    
+    fishes.forEach(f => { 
+        f.x -= speed; 
+        f.y = f.by + Math.sin(frames * 0.03) * 20; 
+        if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) { f.collected = true; activatePower(); } 
+    });
+
     paws.forEach(p => {
         if (catX+18 > p.x+140 && catX-18 < p.x+260) {
             if (catY-18 < p.yT || catY+18 > p.yB) { if (activePower === 'SHIELD') { activePower = null; pTimer = 0; p.passed = true; } else gameOver(); }
@@ -231,6 +247,7 @@ function draw() {
     ctx.globalAlpha = (gameState === 'MENU') ? 0.9 : 0.75;
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
     ctx.globalAlpha = 1;
+
     if (gameState === 'PLAY' || gameState === 'OVER') {
         paws.forEach(p => {
             ctx.save(); if(activePower === 'SHIELD') ctx.globalAlpha = 0.45;
@@ -238,8 +255,11 @@ function draw() {
             ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); ctx.restore();
         });
         stars.forEach(s => { if(s.collected) return; ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot); ctx.shadowBlur = 20; ctx.shadowColor = "gold"; ctx.fillStyle = "#FFD700"; drawStar(0, 0, 16, 5, 7); ctx.restore(); });
-        particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = "gold"; drawStar(0, 0, p.s, 5, p.s/2); ctx.restore(); });
-        fishes.forEach(f => { if(!f.collected) { ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = "cyan"; ctx.drawImage(assets.fish, f.x-35, f.y-35, 75, 75); ctx.restore(); } });
+        particles.forEach(p => { 
+            ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = "gold"; 
+            let sparkle = p.baseSize * (0.8 + Math.sin(frames * 0.5) * 0.4); drawStar(0, 0, sparkle, 5, sparkle/2); ctx.restore(); 
+        });
+        fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x - 35, f.y - 35, 75, 75); });
         if (activePower) { ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 52, 0, Math.PI*2); ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 4; ctx.stroke(); ctx.restore(); }
         ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(selCat, -40, -40, 80, 80); ctx.restore();
     }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Clean UI Edition</title>
+    <title>Caught! - Menu & End Screen</title>
     <style>
         :root { --gold: #DAA520; --bg-glass: rgba(255, 255, 255, 0.15); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -14,45 +14,39 @@
         #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 1; }
 
-        /* --- CLEAN UI OVERLAY --- */
-        #menu-overlay { 
+        /* --- UI OVERLAYS --- */
+        .overlay { 
             position: absolute; inset: 0; z-index: 20; 
-            display: flex; flex-direction: column; align-items: center; justify-content: space-around;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.4), rgba(0,0,0,0.8));
-            padding: 40px 20px; color: white; transition: opacity 0.3s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.85); padding: 40px 20px; color: white; text-align: center;
         }
 
-        .menu-section { width: 100%; text-align: center; }
-        .section-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; color: var(--gold); font-weight: bold; }
-
-        /* Character Select Cards */
-        .char-grid { display: flex; justify-content: center; gap: 15px; }
+        /* --- MAIN MENU STYLES --- */
+        .char-grid { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
         .char-card { 
             width: 80px; height: 80px; border-radius: 15px; background: var(--bg-glass);
             border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
-            transition: 0.2s; cursor: pointer;
+            transition: 0.2s;
         }
         .char-card.selected { border-color: var(--gold); background: rgba(218, 165, 32, 0.2); transform: scale(1.1); }
-        .char-card img { width: 60px; height: 60px; object-fit: contain; }
+        .char-card img { width: 60px; height: 60px; pointer-events: none; }
 
-        /* World Select Buttons */
-        .world-list { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .world-list { display: flex; flex-direction: column; gap: 10px; align-items: center; margin: 15px 0; }
         .world-btn { 
-            width: 200px; padding: 12px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.3);
-            background: var(--bg-glass); color: white; font-size: 16px; cursor: pointer; transition: 0.2s;
+            width: 220px; padding: 12px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.3);
+            background: var(--bg-glass); color: white; font-size: 16px; 
         }
-        .world-btn.selected { background: var(--gold); border-color: var(--gold); font-weight: bold; box-shadow: 0 0 15px var(--gold); }
+        .world-btn.selected { background: var(--gold); border-color: var(--gold); font-weight: bold; }
 
-        #start-button { 
-            padding: 18px 80px; font-size: 24px; border-radius: 50px; 
-            border: none; background: #fff; color: #000; font-weight: 900; 
-            box-shadow: 0 5px 20px rgba(255,255,255,0.3); cursor: pointer;
-            transition: transform 0.1s active;
+        /* --- BUTTONS --- */
+        .action-btn { 
+            padding: 18px 60px; font-size: 22px; border-radius: 50px; border: none; 
+            background: #fff; color: #000; font-weight: 900; cursor: pointer; margin-top: 20px;
         }
 
         #seasonal-gif { 
             position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
-            opacity: 0.2; z-index: 5; pointer-events: none; mix-blend-mode: screen; display: none; 
+            opacity: 0.2; z-index: 5; pointer-events: none; display: none; 
         }
     </style>
 </head>
@@ -62,28 +56,30 @@
         <canvas id="gameCanvas"></canvas>
         <img id="seasonal-gif" src="" alt="">
 
-        <div id="menu-overlay">
-            <h1 style="font-size: 50px; margin: 0; letter-spacing: -2px;">CAUGHT!</h1>
-
-            <div class="menu-section">
-                <div class="section-title">Select Character</div>
-                <div class="char-grid">
-                    <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png" alt="Cat 1"></div>
-                    <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png" alt="Cat 2"></div>
-                    <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png" alt="Cat 3"></div>
-                </div>
+        <div id="menu-overlay" class="overlay">
+            <h1 style="font-size: 50px; margin: 0; color: #fff;">CAUGHT!</h1>
+            
+            <p style="color: var(--gold); font-weight: bold; margin-top: 30px;">CHOOSE CHARACTER</p>
+            <div class="char-grid">
+                <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
+                <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
+                <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
             </div>
 
-            <div class="menu-section">
-                <div class="section-title">Select World</div>
-                <div class="world-list">
-                    <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
-                    <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
-                    <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
-                </div>
+            <p style="color: var(--gold); font-weight: bold;">CHOOSE WORLD</p>
+            <div class="world-list">
+                <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
+                <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
+                <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
             </div>
 
-            <button id="start-button">START</button>
+            <button class="action-btn" onclick="startGame()">START</button>
+        </div>
+
+        <div id="end-overlay" class="overlay" style="display: none;">
+            <h1 style="font-size: 60px; color: #ff4d4d; margin: 0;">CAUGHT!</h1>
+            <p id="final-stats" style="font-size: 24px; margin: 20px 0;"></p>
+            <button class="action-btn" onclick="showMenu()" style="background: var(--gold); color: white;">RETURN TO MENU</button>
         </div>
     </div>
 
@@ -92,7 +88,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const gifElement = document.getElementById('seasonal-gif');
 const menuOverlay = document.getElementById('menu-overlay');
-const startButton = document.getElementById('start-button');
+const endOverlay = document.getElementById('end-overlay');
 
 let W, H, bgX = 0;
 function resize() {
@@ -117,13 +113,13 @@ const musicTracks = ['spring.mp3','summer.mp3','autumn.mp3'].map(f => {
 });
 const timeGifs = ['spring.gif', 'summer.gif', 'autumn.gif'];
 
-// --- STATE ---
+// --- GAME STATE ---
 let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0, lastCycleIdx = -1;
 let catX = 80, catY = H/2, catV = 0, catPaws = [], stars = [], powerUps = [], particles = [], rollAngle = 0;
 let selectedCatImg = assets.cats[0], activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
 let selectedBG = 'day', lastTime = performance.now();
 
-// --- MENU ACTIONS ---
+// --- MENU FUNCTIONS ---
 window.selectChar = (idx, el) => {
     selectedCatImg = assets.cats[idx];
     document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
@@ -134,6 +130,20 @@ window.selectWorld = (id, el) => {
     selectedBG = id;
     document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
+};
+
+window.startGame = () => {
+    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
+    menuOverlay.style.display = 'none';
+    endOverlay.style.display = 'none';
+    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; score = 0; starsCount = 0; lastCycleIdx = -1;
+    gameState = 'PLAY';
+};
+
+window.showMenu = () => {
+    endOverlay.style.display = 'none';
+    menuOverlay.style.display = 'flex';
+    gameState = 'MAIN_MENU';
 };
 
 function createBurst(x, y) {
@@ -165,18 +175,20 @@ function update(dt) {
     if (splashTimer > 0) splashTimer--;
 
     if (frames % 100 === 0) {
-        let gap = H * 0.32, h = Math.random() * (H - gap - 300) + 150;
+        let gap = H * 0.35, h = Math.random() * (H - gap - 300) + 150;
         catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
         stars.push({ x: W + 175, y: h + gap/2, collected: false });
-        if (starsCount > 0 && starsCount % 10 === 0 && powerUps.length === 0) {
+        if (starsCount > 0 && starsCount % 10 === 0) {
             powerUps.push({ x: W + 500, y: Math.random()*(H-300)+150, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
         }
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
-        if (catX + 30 > p.x && catX - 30 < p.x + 150) {
-            if ((catY - 40 < p.yT || catY + 40 > p.yB) && activePower !== 'SHIELD') triggerGameOver();
+        // Accurate collision (Narrower hitbox)
+        let catRadius = 28;
+        if (catX + catRadius > p.x + 30 && catX - catRadius < p.x + 120) {
+            if ((catY - catRadius < p.yT || catY + catRadius > p.yB) && activePower !== 'SHIELD') triggerGameOver();
         }
         if (!p.passed && p.x + 150 < catX) { score++; p.passed = true; }
     });
@@ -204,12 +216,14 @@ function update(dt) {
 function triggerGameOver() {
     gameState = 'GAMEOVER';
     musicTracks.forEach(t => t.pause());
-    menuOverlay.style.display = 'flex';
-    menuOverlay.style.opacity = '1';
+    document.getElementById('final-stats').innerText = `Stars Collected: ${starsCount}\nScore: ${score}`;
+    endOverlay.style.display = 'flex';
 }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
+    
+    // Background
     if (assets[selectedBG].complete) {
         ctx.globalAlpha = 0.5;
         ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
@@ -218,12 +232,14 @@ function draw() {
     }
 
     if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
+        // Paws
         ctx.save(); if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
         catPaws.forEach(p => {
             ctx.drawImage(assets.paw, p.x, p.yB, 150, H);
             ctx.save(); ctx.translate(p.x + 75, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -75, 0, 150, H); ctx.restore();
         }); ctx.restore();
 
+        // Glowing Stars
         stars.forEach(s => {
             ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "#FFD700"; ctx.fillStyle = "#FFD700";
             ctx.translate(s.x, s.y); ctx.rotate(frames * 0.05);
@@ -231,13 +247,16 @@ function draw() {
             ctx.closePath(); ctx.fill(); ctx.restore();
         });
 
+        // Particles & Fish
         particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
         powerUps.forEach(pu => ctx.drawImage(assets.fish, pu.x-40, pu.y-30, 80, 60));
 
+        // Cat
         ctx.save(); ctx.translate(catX, catY);
         if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
         ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
 
+        // HUD
         ctx.fillStyle = "#fff"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="left";
         ctx.fillText(`Stars: ${starsCount}`, 25, 55);
     }
@@ -256,14 +275,6 @@ function loop(t) {
 window.addEventListener('touchstart', (e) => {
     if (gameState === 'PLAY') { e.preventDefault(); catV = -11.5; }
 }, {passive: false});
-
-startButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
-    menuOverlay.style.display = 'none';
-    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; score = 0; starsCount = 0;
-    gameState = 'PLAY';
-});
 
 requestAnimationFrame(loop);
 </script>

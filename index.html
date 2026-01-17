@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Final Edition</title>
+    <title>Caught! - Final Magical Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 20px rgba(255, 215, 0, 0.6); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -225,20 +225,22 @@ function update() {
     let speed = (W * 0.01 + (score * 0.08)) * speedMult;
     if (powerTimer > 0) { powerTimer--; if (powerTimer <= 0) activePower = null; }
 
-    // Logic: Star/Fish horizontally offset from the paw set
+    // Spawning Logic: Stars appear between paws with random horizontal reach
     if (frames % Math.floor(GAME_CONFIG.spawnRate / speedMult) === 0) {
         let gap = Math.random() * 80 + 130; 
         let h = Math.random() * (H - gap - 240) + 120;
         let spawnX = W + 100;
-        let horizontalSafetyBuffer = 450; 
+        
+        // Horizontal logic: randOffset keeps star in the gap between paw sets
+        let randOffset = 150 + Math.random() * 200; 
 
         catPaws.push({ x: spawnX, yT: h, yB: h + gap, passed: false });
         
-        // Horizontal Spawning: Fish only at 10, 20, etc.
+        // Strict Fish Logic: Only appear exactly when milestone is hit
         if (starsCount > 0 && starsCount % 10 === 0 && fishes.length === 0 && !activePower) {
-             fishes.push({ x: spawnX + horizontalSafetyBuffer, baseYa: h + (gap / 2), y: h + (gap / 2), collected: false });
+             fishes.push({ x: spawnX + 500, baseYa: h + (gap / 2), y: h + (gap / 2), collected: false });
         } else {
-             stars.push({ x: spawnX + horizontalSafetyBuffer, y: h + (gap / 2), collected: false, spin: 0 });
+             stars.push({ x: spawnX + randOffset, y: h + (gap / 2), collected: false, spin: 0 });
         }
     }
 
@@ -260,6 +262,7 @@ function update() {
     });
 
     fishes.forEach(f => { f.x -= speed; f.y = f.baseYa + Math.sin(frames * 0.05) * 20; if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) { f.collected = true; activatePowerUp(); } });
+    
     catPaws.forEach(p => {
         if (catX + 18 > p.x + 140 && catX - 18 < p.x + 260) {
             if (catY - 18 < p.yT || catY + 18 > p.yB) {

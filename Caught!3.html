@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caught! - Seasonal Music & Custom BG</title>
+    <style>
+        body { margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        #setup-container { 
+            background: #ffffff; color: #333; padding: 25px; width: 450px; 
+            margin: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center; z-index: 100;
+        }
+        .input-row { margin: 15px 0; text-align: left; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input { width: 100%; font-size: 13px; }
+        canvas { border: 5px solid #fff; border-radius: 20px; cursor: pointer; display: none; background: #222; }
+        #game-ui { display: none; flex-direction: column; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-container">
+        <h2 style="margin-top:0">Caught! Setup</h2>
+        <p style="font-size: 14px; color: #666;">Select your background images. Music will load automatically from your folder.</p>
+        
+        <div class="input-row">
+            <label>Day Background</label>
+            <input type="file" accept="image/*" onchange="handleFile(event, 'day')">
+        </div>
+        <div class="input-row">
+            <label>Afternoon Background</label>
+            <input type="file" accept="image/*" onchange="handleFile(event, 'afternoon')">
+        </div>
+        <div class="input-row">
+            <label>Evening Background</label>
+            <input type="file" accept="image/*" onchange="handleFile(event, 'evening')">
+        </div>
+
+        <p id="progress" style="font-weight:bold; color:#e67e22;">Waiting for 3 Backgrounds...</p>
+    </div>
+
+    <div id="game-ui">
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        <p style="color: #aaa; margin-top: 10px;">Click to Jump • Stars give bonus points!</p>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const setup = document.getElementById('setup-container');
+const gameUI = document.getElementById('game-ui');
+const progressText = document.getElementById('progress');
+
+// --- ASSETS ---
+const assets = {
+    day: new Image(),
+    afternoon: new Image(),
+    evening: new Image(),
+    cat: new Image(),
+    paw: new Image()
+};
+assets.cat.src = 'cat.png'; 
+assets.paw.src = 'paw.png';
+
+// --- SEASONAL MUSIC ---
+const musicTracks = [
+    new Audio('spring.mp3'),
+    new Audio('summer.mp3'),
+    new Audio('autumn.mp3'),
+    new Audio('winter.mp3')
+];
+musicTracks.forEach(t => { t.loop = true; t.volume = 0; });
+
+let currentMusicIdx = -1;
+let filesLoaded = { day: false, afternoon: false, evening: false };
+let totalLoaded = 0;
+
+function handleFile(event, key) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            assets[key].src = e.target.result;
+            if (!filesLoaded[key]) {
+                filesLoaded[key] = true;
+                totalLoaded++;
+                if (totalLoaded >= 3) startGame();
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function startGame() {
+    setup.style.display = 'none';
+    gameUI.style.display = 'flex';
+    canvas.style.display = 'block';
+    gameState = 'MENU';
+    loop();
+}
+
+function updateMusic(score) {
+    // Changes season every 15 points
+    let sIdx = Math.floor(score / 15) % 4;
+    if (sIdx !== currentMusicIdx) {
+        currentMusicIdx = sIdx;
+        musicTracks.forEach((track, i) => {
+            if (i === sIdx) {
+                track.play().catch(() => {});
+                track.volume = 0.5;
+            } else {
+                track.pause();
+                track.currentTime = 0;
+            }
+        });
+    }
+}
+
+// --- GAME STATE ---
+let score = 0, starsCount = 0, frames = 0, gameState = 'MENU';
+let catY = 300, catV = 0, catPaws = [], stars = [], rollAngle = 0;
+
+function update() {
+    frames++;
+    if (gameState !== 'PLAY') return;
+
+    updateMusic(score);
+
+    let speed = 4.5 + (score * 0.1);
+    rollAngle += 0.1;
+
+    if (frames % 95 === 0) {
+        let h = Math.random() * 250 + 100;
+        let gap = 215;
+        catPaws.push({ x: 650, yT: h, yB: h + gap, passed: false });
+        stars.push({ x: 650 + 150, y: h + (gap / 2), collected: false });
+    }
+
+    catPaws.forEach(p => {
+        p.x -= speed;
+        if (120 + 25 > p.x + 115 && 120 - 25 < p.x + 185) {
+            if (catY - 25 < p.yT || catY + 25 > p.yB) endGame();
+        }
+        if (!p.passed && p.x + 150 < 120) { score++; p.passed = true; }
+    });
+
+    stars.forEach(s => {
+        s.x -= speed;
+        let dist = Math.sqrt((120 - s.x)**2 + (catY - s.y)**2);
+        if (!s.collected && dist < 40) {
+            s.collected = true;
+            starsCount++;
+            if (starsCount % 5 === 0) score += 2; 
+        }
+    });
+
+    catPaws = catPaws.filter(p => p.x > -350);
+    stars = stars.filter(s => s.x > -50 && !s.collected);
+    catV += 0.42; catY += catV;
+    if (catY > 600 || catY < 0) endGame();
+}
+
+function endGame() {
+    gameState = 'GAMEOVER';
+    musicTracks.forEach(t => { t.pause(); t.currentTime = 0; });
+}
+
+function drawStar(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(frames * 0.05);
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+        ctx.lineTo(0, -15); ctx.rotate(Math.PI/5);
+        ctx.lineTo(0, -7); ctx.rotate(Math.PI/5);
+    }
+    ctx.fillStyle = '#FFD700'; ctx.shadowBlur = 10; ctx.shadowColor = "yellow";
+    ctx.fill();
+    ctx.restore();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, 600, 600);
+    let bg = score < 10 ? assets.day : (score < 20 ? assets.afternoon : assets.evening);
+    if (bg.complete) ctx.drawImage(bg, 0, 0, 600, 600);
+
+    if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
+        catPaws.forEach(p => {
+            if (assets.paw.complete) {
+                ctx.drawImage(assets.paw, p.x, p.yB, 300, 450);
+                ctx.save(); ctx.translate(p.x + 150, p.yT); ctx.scale(1, -1);
+                ctx.drawImage(assets.paw, -150, 0, 300, 450); ctx.restore();
+            }
+        });
+        stars.forEach(s => drawStar(s.x, s.y));
+        ctx.save(); ctx.translate(120, catY); ctx.rotate(rollAngle);
+        if (assets.cat.complete) ctx.drawImage(assets.cat, -45, -45, 90, 90);
+        ctx.restore();
+        ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.shadowBlur = 5; ctx.shadowColor = "black";
+        ctx.fillText(`Score: ${score}`, 20, 40);
+        ctx.fillText(`Stars: ${starsCount}`, 20, 75);
+    }
+
+    if (gameState === 'MENU') {
+        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 600, 600);
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
+        ctx.fillText("CAUGHT!", 300, 250);
+        ctx.font = "20px Arial"; ctx.fillText("Click to Start Seasonal Music", 300, 320);
+    }
+
+    if (gameState === 'GAMEOVER') {
+        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, 600, 600);
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
+        ctx.fillText("CAUGHT!", 300, 280);
+        ctx.font = "20px Arial"; ctx.fillText("Click to Restart", 300, 350);
+    }
+}
+
+canvas.addEventListener('mousedown', () => {
+    if (gameState !== 'PLAY') {
+        gameState = 'PLAY'; score = 0; starsCount = 0; catY = 300; catV = 0; catPaws = []; stars = [];
+        currentMusicIdx = -1;
+    } else { catV = -7.5; }
+});
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+</script>
+</body>
+</html>

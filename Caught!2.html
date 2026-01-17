@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caught!</title>
+    <style>
+        body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background: #1a1a1a; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        canvas { cursor: pointer; border: 10px solid #fff; border-radius: 30px; box-shadow: 0 25px 70px rgba(0,0,0,0.6); touch-action: none; }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- AUDIO ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const soundBuffers = {};
+let settings = { volLevel: 1, musicVol: 0.5, sfxVol: 0.5 };
+
+async function loadSound(name, url) {
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (e) { console.warn("Sound missing:", url); }
+}
+loadSound('score', 'ding.mp3');
+loadSound('power', 'powerup.mp3');
+
+const musicTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3'), new Audio('winter.mp3')];
+musicTracks.forEach(t => { t.loop = true; t.volume = 0; });
+
+function updateMusic(sIdx) {
+    if (gameState !== 'PLAY' || settings.musicVol <= 0) {
+        musicTracks.forEach(t => { t.volume = 0; if(!t.paused) t.pause(); });
+        return;
+    }
+    const TARGET = 0.2 * settings.musicVol;
+    musicTracks.forEach((t, i) => {
+        if (i === sIdx) {
+            if (t.paused) t.play().catch(()=>{});
+            t.volume = Math.min(TARGET, t.volume + 0.01);
+        } else {
+            t.volume = Math.max(0, t.volume - 0.01);
+            if (t.volume <= 0) t.pause();
+        }
+    });
+}
+
+function cycleVolume() {
+    settings.volLevel = (settings.volLevel + 1) % 3;
+    if (settings.volLevel === 0) { settings.musicVol = 0; settings.sfxVol = 0; }
+    else if (settings.volLevel === 1) { settings.musicVol = 1.0; settings.sfxVol = 1.0; }
+    else { settings.musicVol = 0.3; settings.sfxVol = 0.3; }
+}
+
+// --- ASSETS ---
+const catSkins = [
+    { name: "Classic Cat", src: 'cat.png' },
+    { name: "Black Cat", src: 'cat_black.png' },
+    { name: "Tabby Cat", src: 'cat_tabby.png' }
+];
+let currentCatIdx = 0;
+const loadedCats = catSkins.map(s => { const i = new Image(); i.src = s.src; return i; });
+const imgPaw = new Image(); imgPaw.src = 'paw.png';
+
+const stages = [
+    { top: [255, 209, 209], bot: [255, 245, 228] },
+    { top: [74, 158, 255], bot: [161, 214, 255] },
+    { top: [212, 173, 252], bot: [255, 204, 249] },
+    { top: [26, 42, 68], bot: [74, 78, 105] }
+];
+const seasons = [
+    { color: "#FFB7CE", power: "GHOST", pCol: "#00ffcc" },
+    { color: "#FFF9C4", power: "SHRINK", pCol: "#ff00ff" },
+    { color: "#D35400", power: "MAGNET", pCol: "#ffff00" },
+    { color: "#FFFFFF", power: "SLOW", pCol: "#0000ff" }
+];
+
+// --- STATE ---
+let score = 0, frames = 0, gameState = 'MENU';
+let catY = 300, catV = 0, catPaws = [], stars = [], weather = [], starsCount = 0;
+let curTop = [...stages[0].top], curBot = [...stages[0].bot];
+let superMode = false, superTime = 0, activePower = "", currentSIdx = 0;
+let rollAngle = 0, mousePos = {x:0, y:0};
+
+const btns = {
+    start: { x: 300, y: 310, w: 220, h: 50, text: "START GAME" },
+    skin: { x: 300, y: 380, w: 220, h: 50, text: "SELECT CAT" },
+    vol: { x: 300, y: 450, w: 220, h: 50, text: "VOLUME" }
+};
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function isInside(p, b) { return p.x > b.x - b.w/2 && p.x < b.x + b.w/2 && p.y > b.y - b.h/2 && p.y < b.y + b.h/2; }
+
+function startGame() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    musicTracks.forEach(t => { t.play().then(()=>t.pause()).catch(()=>{}) });
+    score = 0; catPaws = []; stars = []; weather = []; catY = 300; catV = 0; rollAngle = 0;
+    starsCount = 0; superMode = false; gameState = 'PLAY';
+}
+
+function update() {
+    frames++;
+    if (gameState !== 'PLAY') {
+        rollAngle += 0.04; 
+        return;
+    }
+    
+    let sIdx = Math.floor(score / 20) % 4;
+    currentSIdx = sIdx;
+    updateMusic(sIdx);
+
+    let speed = (4 + score * 0.05) * (superMode && activePower === "SLOW" ? 0.4 : 1);
+    let stageIdx = Math.min(3, Math.floor((score % 20) / 5));
+    curTop = curTop.map((v, i) => lerp(v, stages[stageIdx].top[i], 0.1));
+    curBot = curBot.map((v, i) => lerp(v, stages[stageIdx].bot[i], 0.1));
+
+    if (superMode) { superTime--; if (superTime <= 0) superMode = false; }
+    
+    rollAngle += 0.06;
+
+    if (frames % 100 === 0) {
+        let h = Math.random() * 250 + 100;
+        let gapSize = 220;
+        catPaws.push({ x: 650, yT: h, yB: h + gapSize, passed: false });
+        stars.push({ x: 650 + 150, y: h + (gapSize / 2) }); 
+    }
+    if (frames % 10 === 0) weather.push({ x: 650, y: Math.random()*600, vx: -speed - Math.random()*2 });
+
+    catPaws.forEach(p => {
+        p.x -= speed;
+        if (!(superMode && activePower === "GHOST")) {
+            let r = (superMode && activePower === "SHRINK" ? 18 : 30);
+            if (120 + r > p.x + 100 && 120 - r < p.x + 200) {
+                if (catY - r < p.yT || catY + r > p.yB) gameState = 'GAMEOVER';
+            }
+        }
+        if (!p.passed && p.x + 150 < 120) { score++; p.passed = true; if(soundBuffers.score) playSound('score'); }
+    });
+
+    stars = stars.filter(s => {
+        s.x -= speed;
+        if (superMode && activePower === "MAGNET") { 
+            s.x += (120 - s.x) * 0.15; 
+            s.y += (catY - s.y) * 0.15; 
+        }
+        let dist = Math.sqrt((120-s.x)**2 + (catY-s.y)**2);
+        if (dist < 55) {
+            starsCount++;
+            if (starsCount >= 10) { 
+                superMode = true; superTime = 400; starsCount = 0; 
+                activePower = seasons[sIdx].power; if(soundBuffers.power) playSound('power'); 
+            }
+            return false;
+        }
+        return s.x > -50;
+    });
+
+    weather = weather.filter(w => { w.x += w.vx; return w.x > -50; });
+    catPaws = catPaws.filter(p => p.x > -400);
+    catV += 0.38; catY += catV;
+    if (catY > 600 || catY < 0) gameState = 'GAMEOVER';
+}
+
+function draw() {
+    ctx.clearRect(0,0,600,600);
+    
+    let g = ctx.createLinearGradient(0,0,0,600);
+    g.addColorStop(0, `rgb(${curTop[0]},${curTop[1]},${curTop[2]})`);
+    g.addColorStop(1, `rgb(${curBot[0]},${curBot[1]},${curBot[2]})`);
+    ctx.fillStyle = g; ctx.fillRect(0,0,600,600);
+
+    if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
+        weather.forEach(w => {
+            ctx.fillStyle = seasons[currentSIdx].color; ctx.globalAlpha = 0.2;
+            ctx.beginPath(); ctx.arc(w.x, w.y, 3, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+        });
+        catPaws.forEach(p => {
+            ctx.save(); ctx.globalAlpha = (superMode && activePower === "GHOST") ? 0.3 : 1.0;
+            if (imgPaw.complete) {
+                ctx.drawImage(imgPaw, p.x, p.yB, 300, 450);
+                ctx.save(); ctx.translate(p.x + 150, p.yT); ctx.scale(1,-1); ctx.drawImage(imgPaw, -150, 0, 300, 450); ctx.restore();
+            }
+            ctx.restore();
+        });
+        stars.forEach(s => {
+            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(frames * 0.05);
+            ctx.shadowBlur = 18; ctx.shadowColor = "yellow"; ctx.fillStyle = "#FFD700";
+            ctx.beginPath();
+            for(let i=0; i<5; i++) { ctx.lineTo(0, -17.25); ctx.rotate(Math.PI/5); ctx.lineTo(0, -8.05); ctx.rotate(Math.PI/5); }
+            ctx.closePath(); ctx.fill(); ctx.restore();
+        });
+        ctx.save(); ctx.translate(120, catY); ctx.rotate(rollAngle);
+        if (superMode) { ctx.shadowBlur = 25; ctx.shadowColor = seasons[currentSIdx].pCol; }
+        let sz = (superMode && activePower === "SHRINK") ? 45 : 90;
+        if (loadedCats[currentCatIdx].complete) ctx.drawImage(loadedCats[currentCatIdx], -sz/2, -sz/2, sz, sz);
+        ctx.restore();
+        ctx.fillStyle = "white"; ctx.font = "bold 24px Arial"; ctx.textAlign = "left";
+        ctx.fillText(`Score: ${score}`, 20, 40);
+        ctx.fillText(`Stars: ${starsCount}/10`, 20, 75);
+    }
+
+    if (gameState === 'MENU') {
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0,0,600,600);
+        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.font = "bold 60px Arial"; ctx.fillText("CAUGHT!", 300, 100);
+        
+        ctx.save();
+        ctx.translate(300, 200);
+        ctx.rotate(rollAngle);
+        if (loadedCats[currentCatIdx].complete) {
+            ctx.shadowBlur = 15; ctx.shadowColor = "white";
+            ctx.drawImage(loadedCats[currentCatIdx], -50, -50, 100, 100);
+        }
+        ctx.restore();
+        
+        ctx.font = "bold 20px Arial"; ctx.fillStyle = "#FFD700";
+        ctx.fillText(catSkins[currentCatIdx].name, 300, 270);
+
+        let volText = settings.volLevel === 0 ? "MUTED" : (settings.volLevel === 1 ? "HIGH" : "LOW");
+        drawBtn(btns.start, isInside(mousePos, btns.start));
+        drawBtn(btns.skin, isInside(mousePos, btns.skin));
+        drawBtn({...btns.vol, text: `VOLUME: ${volText}`}, isInside(mousePos, btns.vol));
+    }
+
+    if (gameState === 'GAMEOVER') {
+        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,600,600);
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 45px Arial";
+        ctx.fillText("CAUGHT!", 300, 250);
+        let retryBtn = {x:300, y:350, w:180, h:55, text:"RETRY"};
+        drawBtn(retryBtn, isInside(mousePos, retryBtn));
+    }
+}
+
+function drawBtn(b, h) {
+    ctx.save(); ctx.translate(b.x, b.y);
+    ctx.fillStyle = h ? "white" : "rgba(255,255,255,0.15)";
+    ctx.beginPath(); ctx.roundRect(-b.w/2, -b.h/2, b.w, b.h, 15); ctx.fill();
+    ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = h ? "black" : "white";
+    ctx.font = "bold 18px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(b.text, 0, 0); ctx.restore();
+}
+
+canvas.addEventListener('pointerdown', () => {
+    if (gameState === 'MENU') {
+        if (isInside(mousePos, btns.start)) startGame();
+        if (isInside(mousePos, btns.skin)) currentCatIdx = (currentCatIdx + 1) % catSkins.length;
+        if (isInside(mousePos, btns.vol)) cycleVolume();
+    } else if (gameState === 'PLAY') { catV = -7.5; }
+    else if (gameState === 'GAMEOVER') {
+        if (isInside(mousePos, {x:300, y:350, w:180, h:55})) startGame();
+    }
+});
+
+window.addEventListener('pointermove', (e) => {
+    const r = canvas.getBoundingClientRect();
+    mousePos.x = e.clientX - r.left; mousePos.y = e.clientY - r.top;
+});
+
+function playSound(n) {
+    if (settings.sfxVol <= 0 || !soundBuffers[n]) return;
+    const s = audioCtx.createBufferSource();
+    s.buffer = soundBuffers[n];
+    const g = audioCtx.createGain(); g.gain.value = settings.sfxVol;
+    s.connect(g); g.connect(audioCtx.destination); s.start(0);
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

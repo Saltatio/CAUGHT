@@ -373,16 +373,28 @@ function startFromMenu() {
     gameState = 'PLAY'; score=0; starsCount=0; catPaws=[]; stars=[]; powerUps=[]; lastCycleIdx = -1; particles=[]; catY=300; catV=0;
     hideStartOverlay();
 }
+
 // Responsive canvas handling (keeps logical coordinate system at 600x600 but scales for DPR)
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    const size = Math.min(600, Math.min(window.innerWidth * 0.95, window.innerHeight * 0.95));
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Set the canvas size to fill the screen while maintaining aspect ratio
+    const size = Math.min(width, height);
     canvas.style.width = size + 'px';
     canvas.style.height = size + 'px';
-    canvas.width = 600 * dpr;
-    canvas.height = 600 * dpr;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
+
+// Update the game container to ensure it fills the viewport
+const gameContainer = document.getElementById('game-container');
+gameContainer.style.width = '100vw';
+gameContainer.style.height = '100vh';
+
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 

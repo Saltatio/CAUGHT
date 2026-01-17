@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Pro Balanced</title>
+    <title>Caught! - Snappy Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -44,7 +44,7 @@
         #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; font-weight: 900; pointer-events: none; z-index: 30; opacity: 0; transition: 0.3s; text-shadow: 0 0 20px var(--gold); }
     </style>
 </head>
-<body class="dawn-mode">
+<body>
 
     <div id="game-container">
         <div id="ui-layer">
@@ -80,7 +80,8 @@
     </div>
 
 <script>
-const CONFIG = { gravity: 0.65, jump: -10.5, powerDuration: 450, minPawDistance: 320 };
+// SNAPPY PHYSICS: Increased Gravity and Jump
+const CONFIG = { gravity: 0.75, jump: -11.5, powerDuration: 450, minPawDistance: 320 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashText = document.getElementById('splash-text');
@@ -100,7 +101,6 @@ assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cat
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
 tracks.forEach(t => { t.loop = true; t.volume = 0.2; }); 
-meowSfx.volume = 1.0;
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
@@ -111,7 +111,7 @@ function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width 
 window.addEventListener('resize', resize); resize();
 
 window.selectChar = (idx, el) => { selCat = assets.cats[idx]; document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
-window.selectWorld = (id, el) => { selBG = id; document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); document.body.className = id + '-mode'; };
+window.selectWorld = (id, el) => { selBG = id; document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); };
 
 function createBurst(x, y) {
     for(let i=0; i<12; i++) {
@@ -144,16 +144,11 @@ function updateUI() {
     updateMusic();
 }
 
-function playMeow() { meowSfx.currentTime = 0; meowSfx.play().catch(e => {}); }
-
 function activatePower() {
-    playMeow(); 
+    meowSfx.currentTime = 0; meowSfx.play().catch(e => {});
     let pool = ['SHIELD', 'MAGNET'];
-    
-    // Slow power up logic: Only available after 30 stars
     if (starsCount >= 30) pool.push('SLOW'); 
 
-    // Streak protection: Filter pool if the last 2 were the same
     let filteredPool = pool;
     if (powerHistory.length >= 2 && powerHistory[0] === powerHistory[1]) {
         filteredPool = pool.filter(p => p !== powerHistory[0]);
@@ -183,7 +178,7 @@ function update() {
     let distanceCheck = !lastPaw || (W - lastPaw.x) > CONFIG.minPawDistance;
 
     if (frames % Math.floor(currentSpawnRate / sMult) === 0 && distanceCheck) {
-        let gap = Math.random() * 100 + 170;
+        let gap = Math.random() * 100 + 150; // 150-250px gap
         let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
@@ -236,20 +231,10 @@ function update() {
     roll += 0.07;
 }
 
-function drawStarShape(x, y, r, p, ir) {
-    ctx.beginPath();
-    for(let i=0; i<p*2; i++) {
-        let rad = i%2===0 ? r : ir;
-        let a = (i * Math.PI) / p;
-        ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad);
-    }
-    ctx.closePath(); ctx.fill();
-}
-
 function draw() {
     ctx.clearRect(0,0,W,H);
     ctx.save(); 
-    ctx.globalAlpha = 0.7; // 70% Transparency
+    ctx.globalAlpha = 0.7; // 70% Background transparency
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
     ctx.restore();
     
@@ -263,25 +248,20 @@ function draw() {
 
     stars.forEach(s => { 
         if(!s.collected) { 
-            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot); ctx.shadowBlur = 15; ctx.shadowColor = "gold"; ctx.fillStyle = "gold"; drawStarShape(0, 0, 16, 5, 7); ctx.restore(); 
+            ctx.save(); ctx.translate(s.x, s.y); ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.restore(); 
         } 
     });
 
     fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x-35, f.y-35, 70, 70); });
     
     particles.forEach(p => {
-        ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = "gold"; drawStarShape(0, 0, p.size, 5, p.size/2); ctx.restore();
+        ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = "gold"; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
     });
 
     if (activePower) {
         ctx.save();
-        let alpha = 1;
-        let radius = 55 + Math.sin(frames * 0.1) * 3;
-        if (pTimer < 120) alpha = (frames % 6 < 3) ? 0 : 1; 
-
-        if (alpha > 0) {
-            ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(catX, catY, radius, 0, Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.stroke();
-        }
+        let alpha = (pTimer < 120 && frames % 6 < 3) ? 0 : 1;
+        ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(catX, catY, 55, 0, Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke();
         ctx.restore();
     }
 
@@ -290,7 +270,7 @@ function draw() {
 
 function gameOver() { 
     gameState = 'OVER'; 
-    tracks.forEach(t => { t.pause(); t.currentTime = 0; });
+    tracks.forEach(t => t.pause());
     document.getElementById('final-stats').innerText = starsCount; 
     document.getElementById('end-overlay').classList.add('visible'); 
 }
@@ -301,9 +281,7 @@ document.getElementById('start-trigger').onclick = () => {
     gameState = 'PLAY'; 
     menuOverlay.style.display = 'none'; 
     uiLayer.style.display = 'block'; 
-    currentTrackIdx = 0;
     tracks[0].play().catch(e => {});
-    playMeow();
 };
 
 window.addEventListener('touchstart', (e) => { 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Pro Audio Edition</title>
+    <title>Caught! - Luminous Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -97,7 +97,6 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
-// BGM SETUP
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
 tracks.forEach(t => { t.loop = true; t.volume = 0; }); 
@@ -113,28 +112,36 @@ window.addEventListener('resize', resize); resize();
 window.selectChar = (idx, el) => { selCat = assets.cats[idx]; document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
 window.selectWorld = (id, el) => { selBG = id; document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); };
 
+function drawStarShape(x, y, r, p, ir) {
+    ctx.beginPath();
+    for(let i=0; i<p*2; i++) {
+        let rad = i%2===0 ? r : ir;
+        let a = (i * Math.PI) / p;
+        ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
 function createBurst(x, y) {
     for(let i=0; i<12; i++) {
         particles.push({ 
             x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, 
-            life: 1.0, rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.2, size: Math.random()*5+2 
+            life: 1.0, rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.2, 
+            size: Math.random()*5+3 
         });
     }
 }
 
-// SMOOTH CROSSFADE LOGIC
 function crossfade(oldIdx, newIdx) {
     let oldTrack = tracks[oldIdx];
     let newTrack = tracks[newIdx];
-    
     newTrack.currentTime = 0;
     newTrack.play().catch(e => {});
-
     let step = 0.01;
     let fadeInterval = setInterval(() => {
         if (oldTrack.volume > step) oldTrack.volume -= step;
         else { oldTrack.volume = 0; oldTrack.pause(); }
-
         if (newTrack.volume < CONFIG.maxVol - step) newTrack.volume += step;
         else { newTrack.volume = CONFIG.maxVol; clearInterval(fadeInterval); }
     }, 50);
@@ -148,7 +155,6 @@ function updateUI() {
     } else { progressFill.classList.remove('full'); }
     progressFill.style.width = prog + "%";
     
-    // Cycle every 20 stars
     let nextIdx = Math.floor(starsCount / 20) % tracks.length;
     if (nextIdx !== currentTrackIdx) {
         crossfade(currentTrackIdx, nextIdx);
@@ -160,16 +166,13 @@ function activatePower() {
     meowSfx.currentTime = 0; meowSfx.play().catch(e => {});
     let basePool = ['SHIELD', 'MAGNET'];
     if (starsCount >= 30) basePool.push('SLOW'); 
-
     let availablePool = [...basePool];
     if (powerHistory.length >= 2 && powerHistory[0] === powerHistory[1]) {
         availablePool = basePool.filter(p => p !== powerHistory[0]);
     }
-
     let chosen = availablePool[Math.floor(Math.random() * availablePool.length)];
     powerHistory.push(chosen);
     if (powerHistory.length > 2) powerHistory.shift();
-
     activePower = chosen; 
     pTimer = CONFIG.powerDuration;
     splashText.innerText = activePower;
@@ -222,7 +225,9 @@ function update() {
             s.x += (catX - s.x) * 0.12; s.y += (catY - s.y) * 0.12;
         }
         if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 50) {
-            s.collected = true; starsCount++; createBurst(s.x, s.y); updateUI();
+            s.collected = true; starsCount++; 
+            createBurst(s.x, s.y);
+            updateUI();
         }
     });
 
@@ -260,20 +265,57 @@ function draw() {
 
     stars.forEach(s => { 
         if(!s.collected) { 
-            ctx.save(); ctx.translate(s.x, s.y); ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.restore(); 
+            ctx.save(); 
+            ctx.translate(s.x, s.y); 
+            ctx.rotate(s.rot); 
+            ctx.fillStyle = "gold";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "gold";
+            drawStarShape(0, 0, 18, 5, 8); 
+            ctx.restore(); 
         } 
     });
 
     fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x-35, f.y-35, 70, 70); });
     
     particles.forEach(p => {
-        ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = "gold"; ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
+        ctx.save(); 
+        ctx.globalAlpha = p.life; 
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = "gold"; 
+        drawStarShape(0, 0, p.size, 5, p.size/2);
+        ctx.restore();
     });
 
+    // GLOWING POWER BUBBLE
     if (activePower) {
         ctx.save();
-        let alpha = (pTimer < 120 && frames % 6 < 3) ? 0 : 1;
-        ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(catX, catY, 55, 0, Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke();
+        let pulse = Math.sin(frames * 0.1) * 5;
+        let alpha = (pTimer < 120 && frames % 6 < 3) ? 0 : 0.8;
+        
+        ctx.translate(catX, catY);
+        ctx.globalAlpha = alpha;
+        
+        // Glow aura
+        ctx.shadowBlur = 15 + pulse;
+        ctx.shadowColor = "white";
+        
+        // Radial gradient for bubble depth
+        let grad = ctx.createRadialGradient(0, 0, 40, 0, 0, 60);
+        grad.addColorStop(0, "rgba(255, 255, 255, 0)");
+        grad.addColorStop(1, "rgba(255, 255, 255, 0.6)");
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, 55 + (pulse/2), 0, Math.PI*2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        
+        // Outer rim
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
         ctx.restore();
     }
 
@@ -282,10 +324,7 @@ function draw() {
 
 function gameOver() { 
     gameState = 'OVER'; 
-    tracks.forEach(t => { 
-        t.pause();
-        t.volume = 0; 
-    });
+    tracks.forEach(t => { t.pause(); t.volume = 0; });
     document.getElementById('final-stats').innerText = starsCount; 
     document.getElementById('end-overlay').classList.add('visible'); 
 }

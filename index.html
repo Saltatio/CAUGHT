@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Full Edition</title>
+    <title>Caught! - 70% Transparency Edition</title>
     <style>
         :root { --gold: #FFD700; --ui-accent: #4F46E5; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -12,7 +12,7 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
             overflow: hidden; touch-action: none; 
         }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #333; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding-top: 25px; }
@@ -21,9 +21,20 @@
         .star-icon { color: var(--gold); font-size: 26px; }
         #star-display { color: white; font-size: 26px; font-weight: 900; }
         
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; background-size: cover; background-position: center; transition: background 0.4s ease; }
-        #menu-overlay { background-color: rgba(255,255,255,0.1); } 
-        .menu-content { background: rgba(255,255,255,0.95); padding: 35px; border-radius: 40px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 1px solid #fff; }
+        /* MENU OVERLAY - 70% Transparency */
+        .overlay { 
+            position: absolute; inset: 0; z-index: 20; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background-size: cover; background-position: center; 
+            background-color: rgba(0,0,0,0.7); 
+            transition: background 0.4s ease; 
+        }
+        
+        .menu-content { 
+            background: rgba(255,255,255,0.95); padding: 35px; border-radius: 40px; 
+            display: flex; flex-direction: column; align-items: center; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6); border: 1px solid #fff; 
+        }
         
         .char-grid { display: flex; gap: 15px; margin: 20px 0; }
         .char-card { width: 85px; height: 85px; border-radius: 20px; background: #f8f8f8; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 4px solid transparent; transition: 0.2s; }
@@ -117,6 +128,7 @@ window.selectWorld = (id, el) => {
     el.classList.add('selected');
     document.getElementById('menu-overlay').style.backgroundImage = `url(${assets[id].src})`;
 };
+
 window.selectChar = (idx, el) => { 
     selCat = assets.cats[idx]; 
     document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected')); 
@@ -145,9 +157,10 @@ function update() {
     let lastPaw = paws[paws.length - 1];
     if (!lastPaw || (W - lastPaw.x) > CONFIG.minSpacing) {
         let gap = 230, h = Math.random() * (H - 450) + 120;
-        paws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
-        if (fishPending) { fishes.push({ x: W + 220, y: h + gap/2, collected: false }); fishPending = false; } 
-        else { stars.push({ x: W + 220, y: h + gap/2, collected: false, rot: 0 }); }
+        let newX = W + 100;
+        paws.push({ x: newX, yT: h, yB: h + gap, passed: false });
+        if (fishPending) { fishes.push({ x: newX + 120, y: h + gap/2, collected: false }); fishPending = false; } 
+        else { stars.push({ x: newX + 120, y: h + gap/2, collected: false, rot: 0 }); }
     }
 
     paws.forEach((p, i) => { 
@@ -186,7 +199,6 @@ function update() {
     });
 
     particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.025; if(p.life <= 0) particles.splice(i, 1); });
-
     catV += CONFIG.gravity; catY += catV;
     if (catY > H || catY < 0) gameOver();
     roll += 0.1;
@@ -200,8 +212,15 @@ function showSplash(txt) {
 
 function draw() {
     ctx.clearRect(0,0,W,H);
+    
+    // Draw Background
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
     
+    // 70% In-Game Transparency Overlay (Black)
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(0,0,W,H);
+    
+    // Draw Paws
     paws.forEach(p => {
         ctx.save();
         ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
@@ -209,6 +228,7 @@ function draw() {
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
     });
 
+    // Draw Stars
     stars.forEach(s => { if(!s.collected) {
         ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot);
         ctx.shadowBlur = 18; ctx.shadowColor = "gold"; ctx.fillStyle = "gold";
@@ -217,9 +237,11 @@ function draw() {
         ctx.restore();
     }});
 
+    // Draw Fishes and Particles
     fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x-35, f.y-35, 70, 70); });
     particles.forEach(p => { ctx.fillStyle = `rgba(255,215,0,${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); });
 
+    // Power-up Glow
     if (activePower) {
         ctx.save(); ctx.translate(catX, catY);
         let pulse = Math.sin(frames * 0.15) * 6;
@@ -230,6 +252,7 @@ function draw() {
         ctx.restore();
     }
 
+    // Draw Player
     ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(selCat, -45, -45, 90, 90); ctx.restore();
 }
 
@@ -255,7 +278,6 @@ document.getElementById('start-trigger').onclick = (e) => {
 
 window.addEventListener('touchstart', (e) => { 
     if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; }
-    // Unlock Audio Context for mobile
     if (gameState === 'PLAY') { tracks[currentTrackIdx].play().catch(()=>{}); }
 }, {passive:false});
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Rhythm & Shield Edition</title>
+    <title>Caught! - Pro Balanced</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -80,7 +80,7 @@
     </div>
 
 <script>
-const CONFIG = { gravity: 0.65, jump: -10.5, powerDuration: 450, minPawDistance: 380 };
+const CONFIG = { gravity: 0.65, jump: -10.5, powerDuration: 450, minPawDistance: 320 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashText = document.getElementById('splash-text');
@@ -105,6 +105,7 @@ meowSfx.volume = 1.0;
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let selCat = assets.cats[0], selBG = 'day', activePower = null, pTimer = 0, currentTrackIdx = 0;
+let powerHistory = [];
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
@@ -122,7 +123,6 @@ function createBurst(x, y) {
 }
 
 function updateMusic() {
-    // Music changes every 20 stars
     if (starsCount > 0 && starsCount % 20 === 0) {
         let nextIdx = (Math.floor(starsCount / 20)) % tracks.length;
         if (nextIdx !== currentTrackIdx) {
@@ -137,24 +137,33 @@ function updateMusic() {
 function updateUI() {
     starDisplay.innerText = starsCount;
     let prog = (starsCount % 10) / 10 * 100;
-    
     if (starsCount > 0 && starsCount % 10 === 0) { 
         prog = 100; progressFill.classList.add('full'); fishPending = true;
     } else { progressFill.classList.remove('full'); }
     progressFill.style.width = prog + "%";
-    
     updateMusic();
 }
 
-function playMeow() {
-    meowSfx.currentTime = 0;
-    meowSfx.play().catch(e => {});
-}
+function playMeow() { meowSfx.currentTime = 0; meowSfx.play().catch(e => {}); }
 
 function activatePower() {
     playMeow(); 
-    const types = ['SHIELD', 'MAGNET', 'SLOW'];
-    activePower = types[Math.floor(Math.random()*3)]; 
+    let pool = ['SHIELD', 'MAGNET'];
+    
+    // Slow power up logic: Only available after 30 stars
+    if (starsCount >= 30) pool.push('SLOW'); 
+
+    // Streak protection: Filter pool if the last 2 were the same
+    let filteredPool = pool;
+    if (powerHistory.length >= 2 && powerHistory[0] === powerHistory[1]) {
+        filteredPool = pool.filter(p => p !== powerHistory[0]);
+    }
+
+    let nextPower = filteredPool[Math.floor(Math.random() * filteredPool.length)];
+    powerHistory.push(nextPower);
+    if (powerHistory.length > 2) powerHistory.shift();
+
+    activePower = nextPower; 
     pTimer = CONFIG.powerDuration;
     splashText.innerText = activePower;
     splashText.style.opacity = '1';
@@ -169,7 +178,7 @@ function update() {
 
     if (pTimer > 0) { pTimer--; if(pTimer <= 0) activePower = null; }
 
-    let currentSpawnRate = Math.max(80, 140 - (score * 2));
+    let currentSpawnRate = Math.max(55, 80 - (score * 1.5));
     let lastPaw = paws[paws.length - 1];
     let distanceCheck = !lastPaw || (W - lastPaw.x) > CONFIG.minPawDistance;
 
@@ -188,7 +197,6 @@ function update() {
 
     paws.forEach((p, i) => { 
         p.x -= speed; 
-        // Collision Detection
         if (catX + 25 > p.x + 150 && catX - 25 < p.x + 250) {
             if (catY - 25 < p.yT || catY + 25 > p.yB) {
                 if (activePower === 'SHIELD') {
@@ -240,13 +248,13 @@ function drawStarShape(x, y, r, p, ir) {
 
 function draw() {
     ctx.clearRect(0,0,W,H);
-    ctx.save(); ctx.globalAlpha = 0.8;
+    ctx.save(); 
+    ctx.globalAlpha = 0.7; // 70% Transparency
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
     ctx.restore();
     
     paws.forEach(p => {
         ctx.save();
-        // Visual indicator for shield: fade paws
         if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
         ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); 
@@ -269,11 +277,7 @@ function draw() {
         ctx.save();
         let alpha = 1;
         let radius = 55 + Math.sin(frames * 0.1) * 3;
-        
-        // Flicker Logic for bubble expiry
-        if (pTimer < 120) {
-            alpha = (frames % 6 < 3) ? 0 : 1; 
-        }
+        if (pTimer < 120) alpha = (frames % 6 < 3) ? 0 : 1; 
 
         if (alpha > 0) {
             ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(catX, catY, radius, 0, Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.stroke();
@@ -286,7 +290,7 @@ function draw() {
 
 function gameOver() { 
     gameState = 'OVER'; 
-    tracks.forEach(t => t.pause());
+    tracks.forEach(t => { t.pause(); t.currentTime = 0; });
     document.getElementById('final-stats').innerText = starsCount; 
     document.getElementById('end-overlay').classList.add('visible'); 
 }
@@ -298,7 +302,7 @@ document.getElementById('start-trigger').onclick = () => {
     menuOverlay.style.display = 'none'; 
     uiLayer.style.display = 'block'; 
     currentTrackIdx = 0;
-    tracks[0].play().catch(e => console.log("Audio blocked"));
+    tracks[0].play().catch(e => {});
     playMeow();
 };
 

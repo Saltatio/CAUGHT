@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Balanced Chaos</title>
+    <title>Caught! - Pro Audio Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -80,12 +80,7 @@
     </div>
 
 <script>
-const CONFIG = { 
-    gravity: 0.75, 
-    jump: -11.5, 
-    powerDuration: 450, 
-    minPawDistance: 240 
-};
+const CONFIG = { gravity: 0.75, jump: -11.5, powerDuration: 450, minPawDistance: 240, maxVol: 0.25 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashText = document.getElementById('splash-text');
@@ -102,16 +97,15 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
+// BGM SETUP
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
-tracks.forEach(t => { t.loop = true; t.volume = 0.2; }); 
+tracks.forEach(t => { t.loop = true; t.volume = 0; }); 
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let selCat = assets.cats[0], selBG = 'day', activePower = null, pTimer = 0, currentTrackIdx = 0;
-
-// Streak protection logic
-let powerHistory = []; 
+let powerHistory = [];
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
@@ -128,6 +122,24 @@ function createBurst(x, y) {
     }
 }
 
+// SMOOTH CROSSFADE LOGIC
+function crossfade(oldIdx, newIdx) {
+    let oldTrack = tracks[oldIdx];
+    let newTrack = tracks[newIdx];
+    
+    newTrack.currentTime = 0;
+    newTrack.play().catch(e => {});
+
+    let step = 0.01;
+    let fadeInterval = setInterval(() => {
+        if (oldTrack.volume > step) oldTrack.volume -= step;
+        else { oldTrack.volume = 0; oldTrack.pause(); }
+
+        if (newTrack.volume < CONFIG.maxVol - step) newTrack.volume += step;
+        else { newTrack.volume = CONFIG.maxVol; clearInterval(fadeInterval); }
+    }, 50);
+}
+
 function updateUI() {
     starDisplay.innerText = starsCount;
     let prog = (starsCount % 10) / 10 * 100;
@@ -135,24 +147,26 @@ function updateUI() {
         prog = 100; progressFill.classList.add('full'); fishPending = true;
     } else { progressFill.classList.remove('full'); }
     progressFill.style.width = prog + "%";
+    
+    // Cycle every 20 stars
+    let nextIdx = Math.floor(starsCount / 20) % tracks.length;
+    if (nextIdx !== currentTrackIdx) {
+        crossfade(currentTrackIdx, nextIdx);
+        currentTrackIdx = nextIdx;
+    }
 }
 
 function activatePower() {
     meowSfx.currentTime = 0; meowSfx.play().catch(e => {});
-    
     let basePool = ['SHIELD', 'MAGNET'];
     if (starsCount >= 30) basePool.push('SLOW'); 
 
-    // Filter out the power-up if it appeared 2 times in a row
     let availablePool = [...basePool];
     if (powerHistory.length >= 2 && powerHistory[0] === powerHistory[1]) {
         availablePool = basePool.filter(p => p !== powerHistory[0]);
     }
 
-    // Pick random from the safe pool
     let chosen = availablePool[Math.floor(Math.random() * availablePool.length)];
-    
-    // Update History (Keep only last 2)
     powerHistory.push(chosen);
     if (powerHistory.length > 2) powerHistory.shift();
 
@@ -180,8 +194,6 @@ function update() {
         let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
-        
-        // Spawn rewards relative to paws
         if (fishPending) {
             fishes.push({ x: sx + 120, by: h + (gap / 2), y: h + (gap / 2), collected: false });
             fishPending = false; 
@@ -270,7 +282,10 @@ function draw() {
 
 function gameOver() { 
     gameState = 'OVER'; 
-    tracks.forEach(t => t.pause());
+    tracks.forEach(t => { 
+        t.pause();
+        t.volume = 0; 
+    });
     document.getElementById('final-stats').innerText = starsCount; 
     document.getElementById('end-overlay').classList.add('visible'); 
 }
@@ -281,6 +296,8 @@ document.getElementById('start-trigger').onclick = () => {
     gameState = 'PLAY'; 
     menuOverlay.style.display = 'none'; 
     uiLayer.style.display = 'block'; 
+    currentTrackIdx = 0;
+    tracks[0].volume = CONFIG.maxVol;
     tracks[0].play().catch(e => {});
 };
 

@@ -3,102 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Menu & End Screen</title>
+    <title>Caught! - Custom Paw Dimensions</title>
     <style>
         :root { --gold: #DAA520; --bg-glass: rgba(255, 255, 255, 0.15); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { 
-            margin: 0; background: #000; display: flex; justify-content: center; align-items: center; 
-            height: 100vh; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; touch-action: none; 
-        }
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; overflow: hidden; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 1; }
-
-        /* --- UI OVERLAYS --- */
-        .overlay { 
-            position: absolute; inset: 0; z-index: 20; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.85); padding: 40px 20px; color: white; text-align: center;
-        }
-
-        /* --- MAIN MENU STYLES --- */
-        .char-grid { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
-        .char-card { 
-            width: 80px; height: 80px; border-radius: 15px; background: var(--bg-glass);
-            border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
-        }
-        .char-card.selected { border-color: var(--gold); background: rgba(218, 165, 32, 0.2); transform: scale(1.1); }
-        .char-card img { width: 60px; height: 60px; pointer-events: none; }
-
-        .world-list { display: flex; flex-direction: column; gap: 10px; align-items: center; margin: 15px 0; }
-        .world-btn { 
-            width: 220px; padding: 12px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.3);
-            background: var(--bg-glass); color: white; font-size: 16px; 
-        }
+        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; padding: 20px; }
+        .char-grid { display: flex; gap: 10px; margin: 15px 0; }
+        .char-card { width: 70px; height: 70px; border-radius: 12px; background: var(--bg-glass); border: 2px solid transparent; display: flex; align-items: center; justify-content: center; }
+        .char-card.selected { border-color: var(--gold); background: rgba(218, 165, 32, 0.3); }
+        .char-card img { width: 50px; height: 50px; }
+        .world-btn { width: 180px; padding: 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-glass); color: white; margin: 5px 0; cursor: pointer; }
         .world-btn.selected { background: var(--gold); border-color: var(--gold); font-weight: bold; }
-
-        /* --- BUTTONS --- */
-        .action-btn { 
-            padding: 18px 60px; font-size: 22px; border-radius: 50px; border: none; 
-            background: #fff; color: #000; font-weight: 900; cursor: pointer; margin-top: 20px;
-        }
-
-        #seasonal-gif { 
-            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
-            opacity: 0.2; z-index: 5; pointer-events: none; display: none; 
-        }
+        .action-btn { padding: 15px 50px; font-size: 20px; border-radius: 40px; border: none; background: #fff; color: #000; font-weight: bold; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <img id="seasonal-gif" src="" alt="">
-
         <div id="menu-overlay" class="overlay">
-            <h1 style="font-size: 50px; margin: 0; color: #fff;">CAUGHT!</h1>
-            
-            <p style="color: var(--gold); font-weight: bold; margin-top: 30px;">CHOOSE CHARACTER</p>
+            <h1>CAUGHT!</h1>
             <div class="char-grid">
                 <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
                 <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
                 <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
             </div>
-
-            <p style="color: var(--gold); font-weight: bold;">CHOOSE WORLD</p>
-            <div class="world-list">
+            <div style="display:flex; flex-direction:column;">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
             </div>
-
-            <button class="action-btn" onclick="startGame()">START</button>
+            <button class="action-btn" id="final-start-trigger">START GAME</button>
         </div>
-
         <div id="end-overlay" class="overlay" style="display: none;">
-            <h1 style="font-size: 60px; color: #ff4d4d; margin: 0;">CAUGHT!</h1>
-            <p id="final-stats" style="font-size: 24px; margin: 20px 0;"></p>
-            <button class="action-btn" onclick="showMenu()" style="background: var(--gold); color: white;">RETURN TO MENU</button>
+            <h1 style="color: #ff4d4d;">CAUGHT!</h1>
+            <p id="final-stats"></p>
+            <button class="action-btn" onclick="showMenu()">RETURN TO MENU</button>
         </div>
     </div>
 
 <script>
+// --- GAME CONFIGURATION ---
+const GAME_CONFIG = {
+    pawWidth: 400,      // Customize visual width
+    pawHeight: 550,     // Customize visual height
+    hitboxWidth: 50,    // Deadly width (keep smaller than visualWidth)
+    gapHeight: 280,     // Vertical gap space
+    gravity: 0.7,
+    jumpStrength: -11
+};
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const gifElement = document.getElementById('seasonal-gif');
 const menuOverlay = document.getElementById('menu-overlay');
 const endOverlay = document.getElementById('end-overlay');
+const startBtn = document.getElementById('final-start-trigger');
 
 let W, H, bgX = 0;
-function resize() {
-    W = window.innerWidth; H = window.innerHeight;
-    canvas.width = W; canvas.height = H;
-}
+function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; }
 window.addEventListener('resize', resize);
 resize();
 
-// --- ASSETS ---
 const assets = {
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(),
@@ -108,18 +76,14 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
-const musicTracks = ['spring.mp3','summer.mp3','autumn.mp3'].map(f => { 
-    let a = new Audio(f); a.loop = true; a.volume = 0; return a; 
-});
-const timeGifs = ['spring.gif', 'summer.gif', 'autumn.gif'];
+const musicTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
+musicTracks.forEach(t => { t.loop = true; t.volume = 0.4; });
 
-// --- GAME STATE ---
-let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0, lastCycleIdx = -1;
-let catX = 80, catY = H/2, catV = 0, catPaws = [], stars = [], powerUps = [], particles = [], rollAngle = 0;
-let selectedCatImg = assets.cats[0], activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
-let selectedBG = 'day', lastTime = performance.now();
+let currentTrackIdx = -1;
+let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0;
+let catX = 100, catY = H/2, catV = 0, catPaws = [], stars = [], rollAngle = 0;
+let selectedCatImg = assets.cats[0], selectedBG = 'day', lastTime = performance.now();
 
-// --- MENU FUNCTIONS ---
 window.selectChar = (idx, el) => {
     selectedCatImg = assets.cats[idx];
     document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
@@ -132,148 +96,125 @@ window.selectWorld = (id, el) => {
     el.classList.add('selected');
 };
 
-window.startGame = () => {
-    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
+startBtn.addEventListener('click', () => {
+    musicTracks.forEach(t => { t.play().then(() => t.pause()); });
     menuOverlay.style.display = 'none';
     endOverlay.style.display = 'none';
-    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; score = 0; starsCount = 0; lastCycleIdx = -1;
+    resetGame();
     gameState = 'PLAY';
-};
+});
 
 window.showMenu = () => {
+    stopAllMusic();
     endOverlay.style.display = 'none';
     menuOverlay.style.display = 'flex';
     gameState = 'MAIN_MENU';
 };
 
-function createBurst(x, y) {
-    for(let i=0; i<12; i++) {
-        particles.push({
-            x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
-            life: 1.0, size: Math.random()*3+2, color: '#FFD700'
-        });
-    }
+function resetGame() {
+    catY = H/2; catV = 0; catPaws = []; stars = []; score = 0; starsCount = 0; frames = 0; currentTrackIdx = -1;
 }
+
+function stopAllMusic() { musicTracks.forEach(t => { t.pause(); t.currentTime = 0; }); }
 
 function update(dt) {
     if (gameState !== 'PLAY') return;
-
     frames++;
-    let idx = Math.floor(starsCount / 20) % 3;
-    if (idx !== lastCycleIdx) {
-        gifElement.src = timeGifs[idx]; gifElement.style.display = 'block'; lastCycleIdx = idx;
-    }
-    musicTracks.forEach((t, i) => {
-        t.volume = (i === idx) ? Math.min(t.volume + 0.02, 0.4) : Math.max(t.volume - 0.05, 0);
-    });
 
-    let speed = (W * 0.012 + (score * 0.1)) * (activePower === 'SLOW' ? 0.5 : 1);
+    let newTrackIdx = Math.floor(starsCount / 20) % 3;
+    if (newTrackIdx !== currentTrackIdx) {
+        stopAllMusic();
+        currentTrackIdx = newTrackIdx;
+        musicTracks[currentTrackIdx].play().catch(e => {});
+    }
+
+    let speed = (W * 0.012 + (score * 0.1));
     bgX = (bgX - (speed * 0.15)) % W;
     rollAngle += 0.15;
 
-    if (powerTimer > 0) powerTimer--; else activePower = null;
-    if (splashTimer > 0) splashTimer--;
-
     if (frames % 100 === 0) {
-        let gap = H * 0.35, h = Math.random() * (H - gap - 300) + 150;
+        let gap = GAME_CONFIG.gapHeight;
+        let h = Math.random() * (H - gap - 200) + 100;
         catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
-        stars.push({ x: W + 175, y: h + gap/2, collected: false });
-        if (starsCount > 0 && starsCount % 10 === 0) {
-            powerUps.push({ x: W + 500, y: Math.random()*(H-300)+150, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
-        }
+        stars.push({ x: W + 100 + (GAME_CONFIG.pawWidth / 2), y: h + gap/2, collected: false });
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
-        // Accurate collision (Narrower hitbox)
-        let catRadius = 28;
-        if (catX + catRadius > p.x + 30 && catX - catRadius < p.x + 120) {
-            if ((catY - catRadius < p.yT || catY + catRadius > p.yB) && activePower !== 'SHIELD') triggerGameOver();
+        let catR = 18;
+        
+        let lethalLeft = p.x + (GAME_CONFIG.pawWidth / 2) - (GAME_CONFIG.hitboxWidth / 2);
+        let lethalRight = p.x + (GAME_CONFIG.pawWidth / 2) + (GAME_CONFIG.hitboxWidth / 2);
+
+        if (catX + catR > lethalLeft && catX - catR < lethalRight) {
+            if (catY - catR < p.yT || catY + catR > p.yB) triggerGameOver();
         }
-        if (!p.passed && p.x + 150 < catX) { score++; p.passed = true; }
+        if (!p.passed && p.x + GAME_CONFIG.pawWidth < catX) { score++; p.passed = true; }
     });
 
     stars.forEach(s => {
         s.x -= speed;
         let d = Math.sqrt((catX-s.x)**2 + (catY-s.y)**2);
-        if (activePower === 'MAGNET' && d < 250) { s.x += (catX-s.x)*0.15; s.y += (catY-s.y)*0.15; }
-        if (!s.collected && d < 60) { s.collected = true; createBurst(s.x, s.y); starsCount++; }
+        if (!s.collected && d < 50) { s.collected = true; starsCount++; }
     });
 
-    powerUps.forEach(pu => {
-        pu.x -= speed;
-        if (Math.sqrt((catX-pu.x)**2 + (catY-pu.y)**2) < 70) {
-            activePower = pu.type; powerTimer = 480; splashText = pu.type; splashTimer = 90; pu.x = -2000;
-        }
-    });
-
-    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.025; });
-    particles = particles.filter(p => p.life > 0);
-    catV += 0.65; catY += catV;
-    if (catY > H + 50 || catY < -50) triggerGameOver();
+    catV += GAME_CONFIG.gravity;
+    catY += catV;
+    if (catY > H || catY < 0) triggerGameOver();
 }
 
 function triggerGameOver() {
     gameState = 'GAMEOVER';
-    musicTracks.forEach(t => t.pause());
-    document.getElementById('final-stats').innerText = `Stars Collected: ${starsCount}\nScore: ${score}`;
+    stopAllMusic();
+    document.getElementById('final-stats').innerText = `Stars: ${starsCount} | Score: ${score}`;
     endOverlay.style.display = 'flex';
 }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    
-    // Background
     if (assets[selectedBG].complete) {
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.4;
         ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
         ctx.drawImage(assets[selectedBG], bgX + W, 0, W, H);
         ctx.globalAlpha = 1;
     }
 
-    if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
-        // Paws
-        ctx.save(); if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
-        catPaws.forEach(p => {
-            ctx.drawImage(assets.paw, p.x, p.yB, 150, H);
-            ctx.save(); ctx.translate(p.x + 75, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -75, 0, 150, H); ctx.restore();
-        }); ctx.restore();
+    catPaws.forEach(p => {
+        const vW = GAME_CONFIG.pawWidth;
+        const vH = GAME_CONFIG.pawHeight;
+        // Top Paw
+        ctx.save();
+        ctx.translate(p.x + (vW / 2), p.yT);
+        ctx.scale(1, -1);
+        ctx.drawImage(assets.paw, -(vW / 2), 0, vW, vH);
+        ctx.restore();
+        
+        // Bottom Paw
+        ctx.drawImage(assets.paw, p.x, p.yB, vW, vH);
+    });
 
-        // Glowing Stars
-        stars.forEach(s => {
-            ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "#FFD700"; ctx.fillStyle = "#FFD700";
-            ctx.translate(s.x, s.y); ctx.rotate(frames * 0.05);
-            ctx.beginPath(); for(let i=0;i<10;i++){let r=i%2?20:10;let a=Math.PI*i/5;ctx.lineTo(r*Math.sin(a),-r*Math.cos(a));}
-            ctx.closePath(); ctx.fill(); ctx.restore();
-        });
+    stars.forEach(s => {
+        if (s.collected) return;
+        ctx.fillStyle = "#FFD700";
+        ctx.beginPath(); ctx.arc(s.x, s.y, 15, 0, Math.PI*2); ctx.fill();
+    });
 
-        // Particles & Fish
-        particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
-        powerUps.forEach(pu => ctx.drawImage(assets.fish, pu.x-40, pu.y-30, 80, 60));
+    ctx.save();
+    ctx.translate(catX, catY);
+    ctx.rotate(rollAngle);
+    ctx.drawImage(selectedCatImg, -40, -40, 80, 80);
+    ctx.restore();
 
-        // Cat
-        ctx.save(); ctx.translate(catX, catY);
-        if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
-        ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
-
-        // HUD
-        ctx.fillStyle = "#fff"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="left";
-        ctx.fillText(`Stars: ${starsCount}`, 25, 55);
-    }
-
-    if (splashTimer > 0) {
-        ctx.fillStyle = "#fff"; ctx.font = "bold 60px sans-serif"; ctx.textAlign="center";
-        ctx.fillText(splashText, W/2, H/2);
+    if (gameState === 'PLAY') {
+        ctx.fillStyle = "white"; ctx.font = "bold 22px sans-serif";
+        ctx.fillText(`Stars: ${starsCount}`, 20, 45);
     }
 }
 
-function loop(t) {
-    update((t - lastTime)/1000); draw(); lastTime = t; requestAnimationFrame(loop);
-}
+function loop(t) { update((t - lastTime)/1000); draw(); lastTime = t; requestAnimationFrame(loop); }
 
-// --- INPUTS ---
-window.addEventListener('touchstart', (e) => {
-    if (gameState === 'PLAY') { e.preventDefault(); catV = -11.5; }
+window.addEventListener('touchstart', (e) => { 
+    if (gameState === 'PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } 
 }, {passive: false});
 
 requestAnimationFrame(loop);

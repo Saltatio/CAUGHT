@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Caught! - Full Mobile Edition</title>
+    <title>Caught! - Mobile Pro Edition</title>
     <style>
         :root { -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #fff; overflow: hidden; }
+        body { 
+            margin: 0; background: #111; display: flex; justify-content: center; align-items: center; 
+            height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; touch-action: none; 
+        }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 1; }
-        #seasonal-gif { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; z-index: 5; pointer-events: none; mix-blend-mode: multiply; display: none; }
-        #start-overlay { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; }
-        #start-overlay button { padding: 18px 45px; font-size: 20px; border-radius: 50px; border: none; background: #DAA520; color: #fff; font-weight: bold; cursor: pointer; }
+        #seasonal-gif { 
+            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
+            opacity: 0.15; z-index: 5; pointer-events: none; mix-blend-mode: screen; display: none; 
+        }
+        #start-overlay { 
+            position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; 
+            justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; 
+        }
+        .ui-panel { padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        button { 
+            padding: 18px 45px; font-size: 22px; border-radius: 50px; border: none; 
+            background: #DAA520; color: #fff; font-weight: bold; cursor: pointer; margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(218,165,32,0.4);
+        }
     </style>
 </head>
 <body>
@@ -20,10 +35,10 @@
         <canvas id="gameCanvas"></canvas>
         <img id="seasonal-gif" src="" alt="seasonal-effect">
         <div id="start-overlay">
-            <div>
-                <h1 style="font-size: 40px; margin-bottom: 10px;">CAUGHT!</h1>
-                <p style="margin-bottom: 25px; opacity: 0.7;">Mobile Character & World Select</p>
-                <button id="start-button">START SESSION</button>
+            <div class="ui-panel">
+                <h1 style="font-size: 42px; margin: 0 0 10px 0; letter-spacing: 3px;">CAUGHT!</h1>
+                <p style="margin-bottom: 20px; opacity: 0.8;">Tap to change Cat & World below</p>
+                <button id="start-button">START GAME</button>
             </div>
         </div>
     </div>
@@ -64,9 +79,9 @@ let selectedCatImg = assets.cat_default, activePower = null, powerTimer = 0, spl
 let selectedBG = 'day', lastTime = performance.now();
 
 const charOptions = [
-    { id: 'default', img: assets.cat_default, x: 0 },
-    { id: 'black', img: assets.cat_black, x: 0 },
-    { id: 'tabby', img: assets.cat_tabby, x: 0 }
+    { img: assets.cat_default, x: 0 },
+    { img: assets.cat_black, x: 0 },
+    { img: assets.cat_tabby, x: 0 }
 ];
 
 const worldOptions = [
@@ -75,9 +90,14 @@ const worldOptions = [
     { id: 'evening', label: 'NIGHT' }
 ];
 
-// --- LOGIC ---
+// --- UTILS ---
 function createBurst(x, y) {
-    for(let i=0; i<12; i++) particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 1, size: 3, color: '#FFD700' });
+    for(let i=0; i<15; i++) {
+        particles.push({
+            x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+            life: 1.0, size: Math.random()*4+2, color: '#FFD700'
+        });
+    }
 }
 
 function updateMasterSync() {
@@ -103,19 +123,20 @@ function update(dt) {
     frames++;
     updateMasterSync();
 
-    let speed = (W * 0.01 + (score * 0.1)) * (activePower === 'SLOW' ? 0.5 : 1);
-    bgX = (bgX - (speed * 0.2)) % W; // Parallax effect
+    let speed = (W * 0.012 + (score * 0.12)) * (activePower === 'SLOW' ? 0.5 : 1);
+    bgX = (bgX - (speed * 0.15)) % W; // Parallax
     rollAngle += 0.15;
 
     if (powerTimer > 0) powerTimer--; else activePower = null;
     if (splashTimer > 0) splashTimer--;
 
-    if (frames % 110 === 0) {
-        let gap = H * 0.32, h = Math.random() * (H - gap - 250) + 125, pX = W + 100;
+    // Spawning aligned with paws
+    if (frames % 100 === 0) {
+        let gap = H * 0.32, h = Math.random() * (H - gap - 300) + 150, pX = W + 100;
         catPaws.push({ x: pX, yT: h, yB: h + gap, passed: false });
         stars.push({ x: pX + 75, y: h + gap/2, collected: false });
         if (starsCount > 0 && starsCount % 10 === 0 && powerUps.length === 0) {
-            powerUps.push({ x: W + 500, y: Math.random()*(H-200)+100, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
+            powerUps.push({ x: W + 500, y: Math.random()*(H-300)+150, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
         }
     }
 
@@ -130,19 +151,20 @@ function update(dt) {
     stars.forEach(s => {
         s.x -= speed;
         let d = Math.sqrt((catX-s.x)**2 + (catY-s.y)**2);
-        if (activePower === 'MAGNET' && d < 250) { s.x += (catX-s.x)*0.12; s.y += (catY-s.y)*0.12; }
-        if (!s.collected && d < 55) { s.collected = true; createBurst(s.x, s.y); starsCount++; }
+        if (activePower === 'MAGNET' && d < 250) { s.x += (catX-s.x)*0.15; s.y += (catY-s.y)*0.15; }
+        if (!s.collected && d < 60) { s.collected = true; createBurst(s.x, s.y); starsCount++; }
     });
 
     powerUps.forEach(pu => {
         pu.x -= speed;
-        if (Math.sqrt((catX-pu.x)**2 + (catY-pu.y)**2) < 65) {
+        if (Math.sqrt((catX-pu.x)**2 + (catY-pu.y)**2) < 70) {
             activePower = pu.type; powerTimer = 480; splashText = pu.type; splashTimer = 90; pu.x = -2000;
         }
     });
 
-    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; });
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.025; });
     particles = particles.filter(p => p.life > 0);
+    
     catV += 0.65; catY += catV;
     if (catY > H + 50 || catY < -50) triggerGameOver();
 }
@@ -158,41 +180,37 @@ function draw() {
     
     // Parallax BG
     if (assets[selectedBG].complete) {
-        ctx.globalAlpha = 0.6;
+        ctx.globalAlpha = 0.5;
         ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
         ctx.drawImage(assets[selectedBG], bgX + W, 0, W, H);
         ctx.globalAlpha = 1;
     }
 
     if (gameState === 'MAIN_MENU') {
-        ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#333"; ctx.textAlign="center"; ctx.font="bold 32px Arial";
-        ctx.fillText("CHOOSE YOUR CAT", W/2, H*0.2);
+        ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "#222"; ctx.textAlign="center"; ctx.font="bold 28px Arial";
+        ctx.fillText("TAP A CAT", W/2, H*0.22);
         
         charOptions.forEach((opt, i) => {
             let x = W/2 + (i-1)*100; opt.x = x;
             ctx.save(); ctx.translate(x, H*0.35);
             if (selectedCatImg === opt.img) {
-                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 4; ctx.strokeRect(-40, -40, 80, 80);
+                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 4; ctx.strokeRect(-45, -45, 90, 90);
             }
-            ctx.drawImage(opt.img, -35, -35, 70, 70); ctx.restore();
+            ctx.drawImage(opt.img, -40, -40, 80, 80); ctx.restore();
         });
 
-        ctx.fillText("CHOOSE WORLD", W/2, H*0.55);
+        ctx.fillText("SELECT WORLD", W/2, H*0.55);
         worldOptions.forEach((opt, i) => {
-            let y = H*0.65 + i*50; opt.y = y;
-            ctx.fillStyle = selectedBG === opt.id ? "#DAA520" : "#777";
-            ctx.font = selectedBG === opt.id ? "bold 24px Arial" : "20px Arial";
+            let y = H*0.65 + i*55; opt.y = y;
+            ctx.fillStyle = selectedBG === opt.id ? "#DAA520" : "#888";
+            ctx.font = selectedBG === opt.id ? "bold 26px Arial" : "22px Arial";
             ctx.fillText(opt.label, W/2, y);
         });
-        
-        ctx.fillStyle = "#333"; ctx.font = "bold 20px Arial";
-        ctx.fillText("TAP START TO PLAY", W/2, H*0.9);
     }
 
     if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
-        // Paws & Stars logic same as before...
-        ctx.save(); if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        ctx.save(); if (activePower === 'SHIELD') ctx.globalAlpha = 0.3; // FADE PAWS
         catPaws.forEach(p => {
             ctx.drawImage(assets.paw, p.x, p.yB, 150, H);
             ctx.save(); ctx.translate(p.x + 75, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -75, 0, 150, H); ctx.restore();
@@ -201,29 +219,33 @@ function draw() {
         stars.forEach(s => {
             ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "#FFD700"; ctx.fillStyle = "#FFD700";
             ctx.translate(s.x, s.y); ctx.rotate(frames * 0.05);
-            ctx.beginPath(); for(let i=0;i<10;i++){let r=i%2?18:9;let a=Math.PI*i/5;ctx.lineTo(r*Math.sin(a),-r*Math.cos(a));}
+            ctx.beginPath(); for(let i=0;i<10;i++){let r=i%2?20:10;let a=Math.PI*i/5;ctx.lineTo(r*Math.sin(a),-r*Math.cos(a));}
             ctx.closePath(); ctx.fill(); ctx.restore();
         });
 
         particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
-        powerUps.forEach(pu => ctx.drawImage(assets.fish, pu.x-35, pu.y-25, 70, 50));
+        powerUps.forEach(pu => ctx.drawImage(assets.fish, pu.x-40, pu.y-30, 80, 60));
 
         ctx.save(); ctx.translate(catX, catY);
-        if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke(); }
+        if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
         ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
 
-        ctx.fillStyle = "#333"; ctx.font = "bold 22px Arial"; ctx.textAlign="left";
-        ctx.fillText(`Stars: ${starsCount}`, 20, 50);
+        ctx.fillStyle = "#333"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
+        ctx.fillText(`Stars: ${starsCount}`, 25, 55);
+        ctx.textAlign="right"; ctx.font = "bold 14px Arial"; ctx.fillText("POWER UP", W-25, 40);
+        ctx.fillStyle = "#eee"; ctx.fillRect(W-125, 50, 100, 12);
+        ctx.fillStyle = "#DAA520"; ctx.fillRect(W-125, 50, (starsCount % 10)*10, 12);
     }
 
     if (gameState === 'GAMEOVER') {
-        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#fff"; ctx.textAlign="center"; ctx.font="bold 40px Arial"; ctx.fillText("CAUGHT!", W/2, H/2 - 40);
-        ctx.font="22px Arial"; ctx.fillText("TAP TO RE-SELECT", W/2, H/2 + 40);
+        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "#fff"; ctx.textAlign="center"; ctx.font="bold 45px Arial"; ctx.fillText("CAUGHT!", W/2, H/2 - 40);
+        ctx.font="22px Arial"; ctx.fillText("TAP TO RESTART", W/2, H/2 + 30);
     }
 
     if (splashTimer > 0) {
-        ctx.fillStyle = "#333"; ctx.font = "bold 60px Arial"; ctx.textAlign="center"; ctx.fillText(splashText, W/2, H/2);
+        ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.fillStyle = "#333"; 
+        ctx.font = "bold 65px Arial"; ctx.textAlign="center"; ctx.fillText(splashText, W/2, H/2); ctx.restore();
     }
 }
 
@@ -239,10 +261,10 @@ function handleInput(e) {
     const y = (touch.clientY - rect.top) * (H / rect.height);
 
     if (gameState === 'MAIN_MENU') {
-        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 40 && Math.abs(y - H*0.35) < 40) selectedCatImg = opt.img; });
-        worldOptions.forEach(opt => { if (Math.abs(x - W/2) < 100 && Math.abs(y - opt.y) < 25) selectedBG = opt.id; });
+        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 50 && Math.abs(y - H*0.35) < 50) selectedCatImg = opt.img; });
+        worldOptions.forEach(opt => { if (Math.abs(x - W/2) < 120 && Math.abs(y - opt.y) < 30) selectedBG = opt.id; });
     } else if (gameState === 'PLAY') {
-        catV = -11;
+        catV = -11.5;
     } else if (gameState === 'GAMEOVER') {
         gameState = 'MAIN_MENU';
     }

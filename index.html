@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Snappy Edition</title>
+    <title>Caught! - Balanced Chaos</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -80,8 +80,12 @@
     </div>
 
 <script>
-// SNAPPY PHYSICS: Increased Gravity and Jump
-const CONFIG = { gravity: 0.75, jump: -11.5, powerDuration: 450, minPawDistance: 320 };
+const CONFIG = { 
+    gravity: 0.75, 
+    jump: -11.5, 
+    powerDuration: 450, 
+    minPawDistance: 240 
+};
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashText = document.getElementById('splash-text');
@@ -105,7 +109,9 @@ tracks.forEach(t => { t.loop = true; t.volume = 0.2; });
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let selCat = assets.cats[0], selBG = 'day', activePower = null, pTimer = 0, currentTrackIdx = 0;
-let powerHistory = [];
+
+// Streak protection logic
+let powerHistory = []; 
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
@@ -122,18 +128,6 @@ function createBurst(x, y) {
     }
 }
 
-function updateMusic() {
-    if (starsCount > 0 && starsCount % 20 === 0) {
-        let nextIdx = (Math.floor(starsCount / 20)) % tracks.length;
-        if (nextIdx !== currentTrackIdx) {
-            tracks[currentTrackIdx].pause();
-            tracks[currentTrackIdx].currentTime = 0;
-            currentTrackIdx = nextIdx;
-            tracks[currentTrackIdx].play().catch(e => {});
-        }
-    }
-}
-
 function updateUI() {
     starDisplay.innerText = starsCount;
     let prog = (starsCount % 10) / 10 * 100;
@@ -141,24 +135,28 @@ function updateUI() {
         prog = 100; progressFill.classList.add('full'); fishPending = true;
     } else { progressFill.classList.remove('full'); }
     progressFill.style.width = prog + "%";
-    updateMusic();
 }
 
 function activatePower() {
     meowSfx.currentTime = 0; meowSfx.play().catch(e => {});
-    let pool = ['SHIELD', 'MAGNET'];
-    if (starsCount >= 30) pool.push('SLOW'); 
+    
+    let basePool = ['SHIELD', 'MAGNET'];
+    if (starsCount >= 30) basePool.push('SLOW'); 
 
-    let filteredPool = pool;
+    // Filter out the power-up if it appeared 2 times in a row
+    let availablePool = [...basePool];
     if (powerHistory.length >= 2 && powerHistory[0] === powerHistory[1]) {
-        filteredPool = pool.filter(p => p !== powerHistory[0]);
+        availablePool = basePool.filter(p => p !== powerHistory[0]);
     }
 
-    let nextPower = filteredPool[Math.floor(Math.random() * filteredPool.length)];
-    powerHistory.push(nextPower);
+    // Pick random from the safe pool
+    let chosen = availablePool[Math.floor(Math.random() * availablePool.length)];
+    
+    // Update History (Keep only last 2)
+    powerHistory.push(chosen);
     if (powerHistory.length > 2) powerHistory.shift();
 
-    activePower = nextPower; 
+    activePower = chosen; 
     pTimer = CONFIG.powerDuration;
     splashText.innerText = activePower;
     splashText.style.opacity = '1';
@@ -173,20 +171,22 @@ function update() {
 
     if (pTimer > 0) { pTimer--; if(pTimer <= 0) activePower = null; }
 
-    let currentSpawnRate = Math.max(55, 80 - (score * 1.5));
+    let currentSpawnRate = Math.max(35, 50 - (score * 1.5));
     let lastPaw = paws[paws.length - 1];
     let distanceCheck = !lastPaw || (W - lastPaw.x) > CONFIG.minPawDistance;
 
     if (frames % Math.floor(currentSpawnRate / sMult) === 0 && distanceCheck) {
-        let gap = Math.random() * 100 + 150; // 150-250px gap
+        let gap = Math.random() * 100 + 150; 
         let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
+        
+        // Spawn rewards relative to paws
         if (fishPending) {
-            fishes.push({ x: sx + 150, by: h + (gap / 2), y: h + (gap / 2), collected: false });
+            fishes.push({ x: sx + 120, by: h + (gap / 2), y: h + (gap / 2), collected: false });
             fishPending = false; 
         } else {
-            stars.push({ x: sx + 200, y: h + (gap / 2), collected: false, rot: 0 });
+            stars.push({ x: sx + 120, y: h + (gap / 2), collected: false, rot: 0 });
         }
     }
 
@@ -234,7 +234,7 @@ function update() {
 function draw() {
     ctx.clearRect(0,0,W,H);
     ctx.save(); 
-    ctx.globalAlpha = 0.7; // 70% Background transparency
+    ctx.globalAlpha = 0.7; 
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
     ctx.restore();
     

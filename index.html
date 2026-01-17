@@ -3,84 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Geometric Glowing Stars</title>
+    <title>Caught! - Polished Edition</title>
     <style>
-        :root { --gold: #FFD700; --bg-glass: rgba(255, 255, 255, 0.15); }
+        :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 15px rgba(255, 215, 0, 0.7); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 1; }
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; padding: 20px; }
-        .char-grid { display: flex; gap: 10px; margin: 15px 0; }
-        .char-card { width: 70px; height: 70px; border-radius: 12px; background: var(--bg-glass); border: 2px solid transparent; display: flex; align-items: center; justify-content: center; }
-        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); }
-        .char-card img { width: 50px; height: 50px; }
-        .world-btn { width: 180px; padding: 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-glass); color: white; margin: 5px 0; cursor: pointer; }
-        .world-btn.selected { background: var(--gold); border-color: #000; color: #000; font-weight: bold; }
-        .action-btn { padding: 15px 50px; font-size: 20px; border-radius: 40px; border: none; background: #fff; color: #000; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        
+        .overlay { 
+            position: absolute; inset: 0; z-index: 20; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.35); /* Transparent enough to see BG */
+            color: white; text-align: center; padding: 20px; 
+            backdrop-filter: blur(5px);
+        }
+
+        /* Interactive Cat Cards */
+        .char-grid { display: flex; gap: 15px; margin: 25px 0; }
+        .char-card { 
+            width: 85px; height: 85px; border-radius: 20px; 
+            background: var(--glass); border: 3px solid rgba(255,255,255,0.1); 
+            display: flex; align-items: center; justify-content: center; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer;
+        }
+        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.25); transform: scale(1.15); box-shadow: var(--glow); }
+        .char-card img { width: 65px; height: 65px; transition: transform 0.6s ease; }
+        .char-card:hover img { transform: rotate(360deg); }
+
+        /* Glowing World Buttons */
+        .world-btn { 
+            width: 220px; padding: 14px; border-radius: 30px; 
+            border: 2px solid rgba(255,255,255,0.3); background: var(--glass); 
+            color: white; margin: 8px 0; cursor: pointer; font-weight: bold;
+            letter-spacing: 1px; transition: all 0.3s ease;
+        }
+        .world-btn.selected { 
+            background: var(--gold); border-color: #fff; color: #000; 
+            box-shadow: var(--glow); transform: translateY(-2px);
+        }
+
+        .action-btn { 
+            padding: 20px 70px; font-size: 24px; border-radius: 50px; 
+            border: none; background: #fff; color: #000; font-weight: 900; 
+            margin-top: 35px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.95); }
+
+        #splash-text {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 55px; font-weight: 900; pointer-events: none;
+            z-index: 30; opacity: 0; transition: opacity 0.2s ease;
+            text-shadow: 0 0 35px rgba(255,255,255,1);
+        }
     </style>
 </head>
 <body>
 
     <div id="game-container">
+        <div id="splash-text"></div>
         <canvas id="gameCanvas"></canvas>
+
         <div id="menu-overlay" class="overlay">
-            <h1 style="color: var(--gold);">CAUGHT!</h1>
+            <h1 style="color: var(--gold); font-size: 55px; margin-bottom: 5px; text-shadow: 3px 3px 15px #000; letter-spacing: 8px;">CAUGHT!</h1>
+            <p style="margin-top:0; font-weight: 300; opacity: 0.8;">CHOOSE YOUR CAT</p>
+            
             <div class="char-grid">
                 <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
                 <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
                 <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
             </div>
+
             <div style="display:flex; flex-direction:column;">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
             </div>
-            <button class="action-btn" id="final-start-trigger">START GAME</button>
+
+            <button class="action-btn" id="start-trigger">START GAME</button>
         </div>
-        <div id="end-overlay" class="overlay" style="display: none;">
-            <h1 style="color: #ff4d4d;">CAUGHT!</h1>
-            <p id="final-stats"></p>
-            <button class="action-btn" onclick="showMenu()">RETURN TO MENU</button>
+
+        <div id="end-overlay" class="overlay" style="display: none; background: rgba(0,0,0,0.85);">
+            <h1 style="color: #ff4d4d; font-size: 50px; letter-spacing: 3px;">CAUGHT!</h1>
+            <p id="final-stats" style="font-size: 26px; font-weight: bold;"></p>
+            <button class="action-btn" onclick="location.reload()">TRY AGAIN</button>
         </div>
     </div>
 
 <script>
 const GAME_CONFIG = {
-    pawWidth: 120,
-    pawHeight: 750,
-    hitboxWidth: 50,
-    gapHeight: 280,
-    gravity: 0.7,
-    jumpStrength: -11
+    pawWidth: 400, pawHeight: 650, hitboxWidth: 140,
+    gapHeight: 300, gravity: 0.7, jumpStrength: -11,
+    spawnRate: 130, powerupDuration: 450
 };
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const splashUI = document.getElementById('splash-text');
 const menuOverlay = document.getElementById('menu-overlay');
-const endOverlay = document.getElementById('end-overlay');
-const startBtn = document.getElementById('final-start-trigger');
 
-let W, H;
-function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; }
-window.addEventListener('resize', resize);
-resize();
-
-const assets = {
+const assets = { 
     day: new Image(), afternoon: new Image(), evening: new Image(),
-    paw: new Image(), cats: [new Image(), new Image(), new Image()]
+    paw: new Image(), cats: [new Image(), new Image(), new Image()] 
 };
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
 assets.paw.src = 'paw.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
-const musicTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
-musicTracks.forEach(t => { t.loop = true; t.volume = 0.4; });
+let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0;
+let catX = 100, catY, catV = 0, catPaws = [], stars = [], particles = [], rollAngle = 0;
+let selectedCatImg = assets.cats[0], selectedBG = 'day', lastPowerUp = null, powerUpRepeatCount = 0;
+let activePower = null, powerTimer = 0;
 
-let currentTrackIdx = -1;
-let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0;
-let catX = 100, catY = H/2, catV = 0, catPaws = [], stars = [], rollAngle = 0;
-let selectedCatImg = assets.cats[0], selectedBG = 'day', lastTime = performance.now();
+function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
+window.addEventListener('resize', resize); resize();
 
 window.selectChar = (idx, el) => {
     selectedCatImg = assets.cats[idx];
@@ -94,181 +131,131 @@ window.selectWorld = (id, el) => {
     el.classList.add('selected');
 };
 
-startBtn.addEventListener('click', () => {
-    musicTracks.forEach(t => { t.play().then(() => t.pause()); });
-    menuOverlay.style.display = 'none';
-    endOverlay.style.display = 'none';
-    resetGame();
-    gameState = 'PLAY';
-});
-
-window.showMenu = () => {
-    stopAllMusic();
-    endOverlay.style.display = 'none';
-    menuOverlay.style.display = 'flex';
-    gameState = 'MAIN_MENU';
-};
-
-function resetGame() {
-    catY = H/2; catV = 0; catPaws = []; stars = []; score = 0; starsCount = 0; frames = 0; currentTrackIdx = -1;
+function pickPowerUp() {
+    const types = ['SHIELD', 'MAGNET', 'SLOW'];
+    let choice;
+    do { choice = types[Math.floor(Math.random() * types.length)]; } while (choice === lastPowerUp && powerUpRepeatCount >= 2);
+    if (choice === lastPowerUp) powerUpRepeatCount++; else { lastPowerUp = choice; powerUpRepeatCount = 1; }
+    return choice;
 }
 
-function stopAllMusic() { musicTracks.forEach(t => { t.pause(); t.currentTime = 0; }); }
+function activatePowerUp() {
+    activePower = pickPowerUp();
+    powerTimer = GAME_CONFIG.powerupDuration;
+    splashUI.innerText = activePower;
+    splashUI.style.opacity = '1';
+    setTimeout(() => { splashUI.style.opacity = '0'; }, 1500);
+}
 
-// Helper to draw star shapes
-function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
-    let rot = Math.PI / 2 * 3;
-    let x = cx;
-    let y = cy;
-    let step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
-    for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
+function createBurst(x, y) {
+    for (let i = 0; i < 12; i++) {
+        const angle = (Math.PI * 2 / 12) * i;
+        particles.push({ x, y, vx: Math.cos(angle)*6, vy: Math.sin(angle)*6, life: 1, size: 4 });
     }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
 }
 
-function update(dt) {
+function update() {
     if (gameState !== 'PLAY') return;
     frames++;
-
-    let newTrackIdx = Math.floor(starsCount / 20) % 3;
-    if (newTrackIdx !== currentTrackIdx) {
-        stopAllMusic();
-        currentTrackIdx = newTrackIdx;
-        musicTracks[currentTrackIdx].play().catch(e => {});
+    let currentSpeedMult = (activePower === 'SLOW') ? 0.4 : 1.0;
+    let speed = (W * 0.012 + (score * 0.1)) * currentSpeedMult;
+    
+    if (powerTimer > 0) {
+        powerTimer--;
+        if (powerTimer <= 0) activePower = null;
     }
 
-    let speed = (W * 0.012 + (score * 0.1));
-    rollAngle += 0.15;
-
-    if (frames % 100 === 0) {
-        let gap = GAME_CONFIG.gapHeight;
-        let h = Math.random() * (H - gap - 200) + 100;
-        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
-        stars.push({ x: W + 100 + (GAME_CONFIG.pawWidth / 2), y: h + gap/2, collected: false, pulse: 0 });
+    if (frames % Math.floor(GAME_CONFIG.spawnRate / currentSpeedMult) === 0) {
+        let h = Math.random() * (H - 500) + 100;
+        catPaws.push({ x: W + 100, yT: h, yB: h + GAME_CONFIG.gapHeight, passed: false });
+        stars.push({ x: W + 100 + 200, y: h + 150, collected: false, spin: 0 });
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
-        let catR = 18;
-        let lethalLeft = p.x + (GAME_CONFIG.pawWidth / 2) - (GAME_CONFIG.hitboxWidth / 2);
-        let lethalRight = p.x + (GAME_CONFIG.pawWidth / 2) + (GAME_CONFIG.hitboxWidth / 2);
-        if (catX + catR > lethalLeft && catX - catR < lethalRight) {
-            if (catY - catR < p.yT || catY + catR > p.yB) triggerGameOver();
+        let left = p.x + 130, right = p.x + 270;
+        if (catX + 18 > left && catX - 18 < right) {
+            if (catY - 18 < p.yT || catY + 18 > p.yB) {
+                if (activePower === 'SHIELD') { activePower = null; powerTimer = 0; p.passed = true; }
+                else { triggerGameOver(); }
+            }
         }
-        if (!p.passed && p.x + GAME_CONFIG.pawWidth < catX) { score++; p.passed = true; }
+        if (!p.passed && p.x + 400 < catX) { score++; p.passed = true; }
     });
 
     stars.forEach(s => {
         s.x -= speed;
-        s.pulse += 0.08;
-        let d = Math.sqrt((catX-s.x)**2 + (catY-s.y)**2);
-        if (!s.collected && d < 55) { s.collected = true; starsCount++; }
+        if (activePower === 'MAGNET') {
+            s.spin += 0.4; 
+            let dx = catX - s.x, dy = catY - s.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 500) { s.x += dx * 0.18; s.y += dy * 0.18; }
+        } else { s.spin += 0.05; }
+        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 65) {
+            s.collected = true; starsCount++;
+            createBurst(s.x, s.y);
+            if (starsCount % 10 === 0) activatePowerUp();
+        }
     });
 
-    catV += GAME_CONFIG.gravity;
-    catY += catV;
+    particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.03; if(p.life<=0) particles.splice(i,1); });
+    catV += GAME_CONFIG.gravity; catY += catV;
     if (catY > H || catY < 0) triggerGameOver();
-}
-
-function triggerGameOver() {
-    gameState = 'GAMEOVER';
-    stopAllMusic();
-    document.getElementById('final-stats').innerText = `Stars: ${starsCount} | Score: ${score}`;
-    endOverlay.style.display = 'flex';
+    rollAngle += 0.15;
 }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
-
-    if (assets[selectedBG].complete) {
-        ctx.globalAlpha = 0.5;
-        ctx.drawImage(assets[selectedBG], 0, 0, W, H);
-        ctx.globalAlpha = 1;
-    }
-
-    catPaws.forEach(p => {
-        const vW = GAME_CONFIG.pawWidth;
-        const vH = GAME_CONFIG.pawHeight;
-        ctx.save();
-        ctx.translate(p.x + (vW / 2), p.yT);
-        ctx.scale(1, -1);
-        ctx.drawImage(assets.paw, -(vW / 2), 0, vW, vH);
-        ctx.restore();
-        ctx.drawImage(assets.paw, p.x, p.yB, vW, vH);
-    });
-
-    // --- ENHANCED GEOMETRIC STARS ---
-    stars.forEach(s => {
-        if (s.collected) return;
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        ctx.rotate(s.pulse);
-
-        // 1. Soft Background Glow (Outer Circle Aura)
-        let glowSize = 30 + Math.sin(s.pulse * 2) * 5;
-        let radialGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, glowSize);
-        radialGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-        radialGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
-        ctx.fillStyle = radialGrad;
-        ctx.beginPath(); ctx.arc(0, 0, glowSize, 0, Math.PI*2); ctx.fill();
-
-        // 2. The Geometric Star Core
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "#FFD700";
-        
-        // Dynamic gold-to-white shimmer
-        let shimmer = (Math.sin(s.pulse * 4) + 1) / 2;
-        ctx.fillStyle = shimmer > 0.8 ? "#FFF" : "#FFD700"; 
-        
-        // Parameters: cx, cy, spikes, outerRadius, innerRadius
-        drawStar(0, 0, 5, 18, 8);
-        ctx.fill();
-
-        // 3. Inner Bright Highlight
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        drawStar(0, 0, 5, 8, 4);
-        ctx.fill();
-
-        ctx.restore();
-    });
-
-    ctx.save();
-    ctx.translate(catX, catY);
-    ctx.rotate(rollAngle);
-    ctx.drawImage(selectedCatImg, -40, -40, 80, 80);
-    ctx.restore();
+    
+    ctx.globalAlpha = (gameState === 'MENU') ? 0.9 : 0.4;
+    if (assets[selectedBG].complete) ctx.drawImage(assets[selectedBG], 0, 0, W, H);
+    ctx.globalAlpha = 1;
 
     if (gameState === 'PLAY') {
-        ctx.fillStyle = "white"; ctx.font = "bold 22px sans-serif";
-        ctx.fillText(`Stars: ${starsCount}`, 20, 45);
+        catPaws.forEach(p => {
+            ctx.save();
+            if (activePower === 'SHIELD') ctx.globalAlpha = 0.4; 
+            ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
+            ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
+            ctx.restore();
+        });
+
+        stars.forEach(s => {
+            if (s.collected) return;
+            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
+            ctx.fillStyle = "#FFD700"; ctx.beginPath();
+            for(let i=0; i<5; i++) {
+                ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*16, -Math.sin((18+i*72)*Math.PI/180)*16);
+                ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8, -Math.sin((54+i*72)*Math.PI/180)*8);
+            }
+            ctx.closePath(); ctx.fill(); ctx.restore();
+        });
+
+        if (activePower) {
+            ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 55, 0, Math.PI * 2);
+            ctx.shadowBlur = 18; ctx.shadowColor = "white";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; ctx.lineWidth = 4; ctx.stroke();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; ctx.fill(); ctx.restore();
+        }
+
+        ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle);
+        ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
+
+        particles.forEach(p => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = "#FFD700";
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        });
+
+        ctx.globalAlpha = 1; ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
+        ctx.fillText(`STARS: ${starsCount}`, 25, 45);
     }
 }
 
-function loop(t) { 
-    update((t - lastTime)/1000); 
-    draw(); 
-    lastTime = t; 
-    requestAnimationFrame(loop); 
-}
+function triggerGameOver() { gameState = 'OVER'; document.getElementById('final-stats').innerText = `STARS COLLECTED: ${starsCount}`; document.getElementById('end-overlay').style.display='flex'; }
+function loop() { update(); draw(); requestAnimationFrame(loop); }
 
-window.addEventListener('touchstart', (e) => { 
-    if (gameState === 'PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } 
-}, {passive: false});
-
-requestAnimationFrame(loop);
+document.getElementById('start-trigger').onclick = () => { gameState = 'PLAY'; menuOverlay.style.display='none'; };
+window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } }, {passive:false});
+loop();
 </script>
 </body>
 </html>

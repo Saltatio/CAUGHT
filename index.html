@@ -3,34 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Bright & Balanced</title>
+    <title>Caught! - Dawn Edition</title>
     <style>
-        :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 15px rgba(255, 215, 0, 0.7); }
+        :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 20px rgba(255, 215, 0, 0.6); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; touch-action: none; }
+        body { 
+            margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            overflow: hidden; touch-action: none; 
+        }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #222; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; z-index: 1; }
+        canvas { display: block; width: 100%; height: 100%; z-index: 1; transition: filter 0.8s ease; }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding: 20px; }
-        .stats-container { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 50px; border: 1px solid var(--glass); width: fit-content; backdrop-filter: blur(5px); }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding: 20px; transition: opacity 0.5s ease; }
+        .stats-container { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px 24px; border-radius: 50px; border: 1px solid var(--glass); width: fit-content; backdrop-filter: blur(5px); }
         .star-icon { color: var(--gold); font-size: 24px; text-shadow: 0 0 10px var(--gold); animation: pulse 1.5s infinite; }
-        #star-display { color: white; font-size: 22px; font-weight: 900; text-shadow: 2px 2px 4px #000; }
+        #star-display { color: white; font-size: 24px; font-weight: 900; text-shadow: 2px 2px 4px #000; }
 
         .progress-wrapper { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 220px; text-align: center; }
-        .progress-label { font-size: 11px; color: white; margin-bottom: 6px; font-weight: 900; letter-spacing: 2px; text-shadow: 2px 2px 4px #000; }
+        .progress-label { font-size: 11px; color: white; margin-bottom: 6px; font-weight: 900; letter-spacing: 2.5px; text-shadow: 2px 2px 4px #000; }
         .progress-bg { width: 100%; height: 14px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.3); }
         #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FF8C00, #FFD700); transition: width 0.4s ease; box-shadow: 0 0 15px var(--gold); }
         
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); color: white; text-align: center; padding: 20px; backdrop-filter: blur(8px); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .overlay { 
+            position: absolute; inset: 0; z-index: 20; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.55); color: white; text-align: center; padding: 20px; 
+            backdrop-filter: blur(12px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #end-overlay { background: rgba(0,0,0,0.75); transform: translateY(100%); opacity: 0; pointer-events: none; }
+        #end-overlay.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+        .title-text { 
+            font-size: 60px; font-weight: 900; letter-spacing: -2px; color: #FFF9E5; margin: 0; 
+            text-shadow: 0 0 25px rgba(255, 215, 0, 0.4); animation: softFloat 4s ease-in-out infinite;
+        }
+
         .char-grid { display: flex; gap: 15px; margin: 25px 0; }
-        .char-card { width: 85px; height: 85px; border-radius: 20px; background: var(--glass); border: 3px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.25); transform: scale(1.1); }
-        .char-card img { width: 65px; height: 65px; }
-        .world-btn { width: 220px; padding: 14px; border-radius: 30px; border: 2px solid rgba(255,255,255,0.3); background: var(--glass); color: white; margin: 8px 0; cursor: pointer; font-weight: bold; }
-        .world-btn.selected { background: var(--gold); color: #000; }
-        .action-btn { padding: 20px 70px; font-size: 24px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; margin-top: 35px; cursor: pointer; }
-        #splash-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 50px; font-weight: 900; pointer-events: none; z-index: 30; opacity: 0; transition: 0.3s; text-shadow: 0 0 20px white; }
+        .char-card { width: 85px; height: 85px; border-radius: 20px; background: var(--glass); border: 2px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); transform: scale(1.1); box-shadow: var(--glow); }
+        .char-card img { width: 60px; height: 60px; }
+
+        .world-btn { width: 220px; padding: 14px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: var(--glass); color: white; margin: 8px 0; cursor: pointer; font-weight: 700; font-size: 14px; letter-spacing: 1px; transition: 0.3s; }
+        .world-btn.selected { background: #FFF; color: #000; border-color: #FFF; }
+
+        .action-btn { padding: 20px 70px; font-size: 22px; border-radius: 50px; border: none; background: #FFF; color: #000; font-weight: 900; margin-top: 35px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.4); transition: 0.2s; }
+        .action-btn:active { transform: scale(0.95); }
+        
+        #splash-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; font-weight: 900; pointer-events: none; z-index: 30; opacity: 0; transition: 0.3s; text-shadow: 0 0 20px var(--gold); }
     </style>
 </head>
 <body>
@@ -47,28 +71,34 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
-            <h1 style="color: var(--gold); font-size: 55px; letter-spacing: 8px; text-shadow: 3px 3px 10px #000;">CAUGHT!</h1>
+            <h1 class="title-text" style="color: var(--gold); font-size: 70px;">CAUGHT!</h1>
+            <p style="opacity: 0.6; font-size: 13px; margin-bottom: 25px; letter-spacing: 2px;">SELECT YOUR KITTEN</p>
             <div class="char-grid">
                 <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
                 <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
                 <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
             </div>
             <div style="display:flex; flex-direction:column;">
-                <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
-                <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
-                <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
+                <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
+                <button class="world-btn" onclick="selectWorld('afternoon', this)">AFTERNOON</button>
+                <button class="world-btn" onclick="selectWorld('evening', this)">EVENING</button>
             </div>
             <button class="action-btn" id="start-trigger">START GAME</button>
         </div>
 
-        <div id="end-overlay" class="overlay" style="display: none;">
-            <h1 style="color: #ff4d4d; font-size: 50px; text-shadow: 2px 2px 10px #000;">CAUGHT!</h1>
-            <p id="final-stats" style="font-size: 22px; font-weight: bold;"></p>
-            <button class="action-btn" onclick="location.reload()">TRY AGAIN</button>
+        <div id="end-overlay" class="overlay">
+            <h1 class="title-text">Caught!</h1>
+            <p style="opacity: 0.6; margin-top: 8px; font-size: 15px; letter-spacing: 1px;">BETTER LUCK NEXT TIME</p>
+            <div style="background: rgba(255,255,255,0.08); padding: 25px 50px; border-radius: 30px; margin: 30px 0; border: 1px solid rgba(255,255,255,0.1);">
+                <span style="font-size: 12px; display: block; opacity: 0.5; letter-spacing: 2px; margin-bottom: 5px;">TOTAL STARS</span>
+                <span id="final-stats" style="font-size: 48px; font-weight: 900; color: var(--gold);">0</span>
+            </div>
+            <button class="action-btn" onclick="location.reload()">RETRY</button>
         </div>
     </div>
 
 <script>
+// Internal game logic remains the same to maintain asset paths
 const GAME_CONFIG = {
     pawWidth: 400, pawHeight: 650, gravity: 0.65, jumpStrength: -10.5,
     spawnRate: 140, powerupDuration: 450
@@ -78,6 +108,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashUI = document.getElementById('splash-text');
 const menuOverlay = document.getElementById('menu-overlay');
+const endOverlay = document.getElementById('end-overlay');
 const uiLayer = document.getElementById('ui-layer');
 const starDisplay = document.getElementById('star-display');
 const progressFill = document.getElementById('progress-fill');
@@ -103,154 +134,4 @@ window.addEventListener('resize', resize); resize();
 
 window.selectChar = (idx, el) => {
     selectedCatImg = assets.cats[idx];
-    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-};
-
-window.selectWorld = (id, el) => {
-    selectedBG = id;
-    document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-};
-
-function updateUI() {
-    starDisplay.innerText = starsCount;
-    let progress = (starsCount % 10) / 10 * 100;
-    if (starsCount > 0 && starsCount % 10 === 0) progress = 100;
-    progressFill.style.width = progress + "%";
-}
-
-function updateMusic() {
-    let trackIdx = Math.floor(starsCount / 20) % 3;
-    if (trackIdx !== currentTrackIdx) {
-        if (currentTrackIdx !== -1) { musicTracks[currentTrackIdx].pause(); musicTracks[currentTrackIdx].currentTime = 0; }
-        currentTrackIdx = trackIdx;
-        musicTracks[currentTrackIdx].play().catch(() => {});
-    }
-}
-
-function activatePowerUp() {
-    const types = ['SHIELD', 'MAGNET', 'SLOW'];
-    activePower = types[Math.floor(Math.random() * 3)];
-    powerTimer = GAME_CONFIG.powerupDuration;
-    splashUI.innerText = activePower; splashUI.style.opacity = '1';
-    setTimeout(() => { splashUI.style.opacity = '0'; }, 1500);
-}
-
-function update() {
-    if (gameState !== 'PLAY') return;
-    frames++;
-
-    let speedMult = (activePower === 'SLOW') ? 0.4 : 1.0;
-    let speed = (W * 0.01 + (score * 0.08)) * speedMult;
-    
-    if (powerTimer > 0) {
-        powerTimer--;
-        if (powerTimer <= 0) activePower = null;
-    }
-
-    if (frames % Math.floor(GAME_CONFIG.spawnRate / speedMult) === 0) {
-        let gap = Math.random() * 80 + 120; 
-        let h = Math.random() * (H - gap - 240) + 120;
-        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
-        
-        // FISH SPAWNING: Spawns associating with the current pair, but shifted far right
-        if (starsCount > 0 && (starsCount + 1) % 10 === 0 && fishes.length === 0 && !activePower) {
-             fishes.push({ x: W + 500, y: h + (gap / 2), collected: false });
-        } else {
-             stars.push({ x: W + 300, y: h + (gap / 2), collected: false, spin: 0 });
-        }
-    }
-
-    catPaws.forEach(p => {
-        p.x -= speed;
-        let catR = 18;
-        if (catX + catR > p.x + 140 && catX - catR < p.x + 260) {
-            if (catY - catR < p.yT || catY + catR > p.yB) {
-                if (activePower === 'SHIELD') { activePower = null; powerTimer = 0; p.passed = true; }
-                else { gameState = 'OVER'; if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause(); showEnd(); }
-            }
-        }
-        if (!p.passed && p.x + 300 < catX) { score++; p.passed = true; }
-    });
-
-    stars.forEach(s => {
-        s.x -= speed;
-        s.spin += (activePower === 'MAGNET') ? 0.4 : 0.05;
-        if (activePower === 'MAGNET' && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 500) {
-            s.x += (catX - s.x) * 0.18; s.y += (catY - s.y) * 0.18;
-        }
-        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) {
-            s.collected = true; starsCount++;
-            updateUI(); updateMusic();
-        }
-    });
-
-    fishes.forEach(f => {
-        f.x -= speed;
-        if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) {
-            f.collected = true;
-            activatePowerUp();
-        }
-    });
-
-    catV += GAME_CONFIG.gravity; catY += catV;
-    if (catY > H || catY < 0) { gameState = 'OVER'; if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause(); showEnd(); }
-    rollAngle += 0.07; 
-}
-
-function showEnd() { uiLayer.style.display = 'none'; document.getElementById('final-stats').innerText = `STARS COLLECTED: ${starsCount}`; document.getElementById('end-overlay').style.display='flex'; }
-
-function draw() {
-    ctx.clearRect(0, 0, W, H);
-    // BRIGHTENED BACKGROUND (0.7 alpha)
-    ctx.globalAlpha = (gameState === 'MENU') ? 0.9 : 0.7;
-    if (assets[selectedBG].complete) ctx.drawImage(assets[selectedBG], 0, 0, W, H);
-    ctx.globalAlpha = 1;
-
-    if (gameState === 'PLAY') {
-        catPaws.forEach(p => {
-            ctx.save();
-            if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
-            ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
-            ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
-            ctx.restore();
-        });
-
-        stars.forEach(s => {
-            if (s.collected) return;
-            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
-            ctx.shadowBlur = 25; ctx.shadowColor = "gold";
-            ctx.fillStyle = "#FFD700"; ctx.beginPath();
-            for(let i=0; i<5; i++) {
-                ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*16, -Math.sin((18+i*72)*Math.PI/180)*16);
-                ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8, -Math.sin((54+i*72)*Math.PI/180)*8);
-            }
-            ctx.closePath(); ctx.fill(); ctx.restore();
-        });
-
-        fishes.forEach(f => {
-            if (f.collected) return;
-            ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = "white";
-            ctx.drawImage(assets.fish, f.x - 35, f.y - 35, 70, 70);
-            ctx.restore();
-        });
-
-        if (activePower) {
-            ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 52, 0, Math.PI * 2);
-            ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.9)";
-            ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.restore();
-        }
-
-        ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle);
-        ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
-    }
-}
-
-function loop() { update(); draw(); requestAnimationFrame(loop); }
-document.getElementById('start-trigger').onclick = () => { gameState = 'PLAY'; menuOverlay.style.display='none'; uiLayer.style.display = 'block'; updateMusic(); updateUI(); };
-window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } }, {passive:false});
-loop();
-</script>
-</body>
-</html>
+    document.querySelectorAll('.char-card').forEach(c

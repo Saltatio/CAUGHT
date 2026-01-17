@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Dawn Edition</title>
+    <title>Caught! - Final Polished Edition</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 20px rgba(255, 215, 0, 0.6); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -15,6 +15,7 @@
         #game-container { position: relative; width: 100vw; height: 100vh; background: #222; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; z-index: 1; transition: filter 0.8s ease; }
         
+        /* HUD UI */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding: 20px; transition: opacity 0.5s ease; }
         .stats-container { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px 24px; border-radius: 50px; border: 1px solid var(--glass); width: fit-content; backdrop-filter: blur(5px); }
         .star-icon { color: var(--gold); font-size: 24px; text-shadow: 0 0 10px var(--gold); animation: pulse 1.5s infinite; }
@@ -28,6 +29,7 @@
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
+        /* Elegant Overlays */
         .overlay { 
             position: absolute; inset: 0; z-index: 20; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -98,7 +100,6 @@
     </div>
 
 <script>
-// Internal game logic remains the same to maintain asset paths
 const GAME_CONFIG = {
     pawWidth: 400, pawHeight: 650, gravity: 0.65, jumpStrength: -10.5,
     spawnRate: 140, powerupDuration: 450
@@ -134,4 +135,162 @@ window.addEventListener('resize', resize); resize();
 
 window.selectChar = (idx, el) => {
     selectedCatImg = assets.cats[idx];
-    document.querySelectorAll('.char-card').forEach(c
+    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+};
+
+window.selectWorld = (id, el) => {
+    selectedBG = id;
+    document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+};
+
+function updateUI() {
+    starDisplay.innerText = starsCount;
+    let progress = (starsCount % 10) / 10 * 100;
+    if (starsCount > 0 && starsCount % 10 === 0) progress = 100;
+    progressFill.style.width = progress + "%";
+}
+
+function updateMusic() {
+    let trackIdx = Math.floor(starsCount / 20) % 3;
+    if (trackIdx !== currentTrackIdx) {
+        if (currentTrackIdx !== -1) { musicTracks[currentTrackIdx].pause(); musicTracks[currentTrackIdx].currentTime = 0; }
+        currentTrackIdx = trackIdx;
+        musicTracks[currentTrackIdx].play().catch(() => {});
+    }
+}
+
+function activatePowerUp() {
+    const types = ['SHIELD', 'MAGNET', 'SLOW'];
+    activePower = types[Math.floor(Math.random() * 3)];
+    powerTimer = GAME_CONFIG.powerupDuration;
+    splashUI.innerText = activePower; splashUI.style.opacity = '1';
+    setTimeout(() => { splashUI.style.opacity = '0'; }, 1500);
+}
+
+function gameOver() {
+    gameState = 'OVER';
+    if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause();
+    canvas.style.filter = "grayscale(0.4) blur(8px)";
+    uiLayer.style.opacity = "0";
+    setTimeout(() => {
+        document.getElementById('final-stats').innerText = starsCount;
+        endOverlay.classList.add('visible');
+    }, 400);
+}
+
+function update() {
+    if (gameState !== 'PLAY') return;
+    frames++;
+    let speedMult = (activePower === 'SLOW') ? 0.45 : 1.0;
+    let speed = (W * 0.01 + (score * 0.08)) * speedMult;
+    if (powerTimer > 0) { powerTimer--; if (powerTimer <= 0) activePower = null; }
+
+    if (frames % Math.floor(GAME_CONFIG.spawnRate / speedMult) === 0) {
+        let gap = Math.random() * 80 + 130; 
+        let h = Math.random() * (H - gap - 240) + 120;
+        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
+        
+        // Spaced Spawning Logic
+        if (starsCount > 0 && (starsCount + 1) % 10 === 0 && fishes.length === 0 && !activePower) {
+             fishes.push({ x: W + 550, y: h + (gap / 2), collected: false });
+        } else {
+             stars.push({ x: W + 350, y: h + (gap / 2), collected: false, spin: 0 });
+        }
+    }
+
+    catPaws.forEach(p => {
+        p.x -= speed;
+        if (catX + 18 > p.x + 140 && catX - 18 < p.x + 260) {
+            if (catY - 18 < p.yT || catY + 18 > p.yB) {
+                if (activePower === 'SHIELD') { activePower = null; powerTimer = 0; p.passed = true; }
+                else { gameOver(); }
+            }
+        }
+        if (!p.passed && p.x + 300 < catX) { score++; p.passed = true; }
+    });
+
+    stars.forEach(s => {
+        s.x -= speed;
+        // Refined Magnet Physics
+        if (activePower === 'MAGNET') {
+            s.spin += 0.5;
+            let dx = catX - s.x; let dy = catY - s.y;
+            let dist = Math.sqrt(dx*dx+dy*dy);
+            if (dist < 450) { 
+                let force = (450 - dist) / 450; 
+                s.x += dx * 0.07 * force; s.y += dy * 0.07 * force; 
+            }
+        } else { s.spin += 0.05; }
+        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) {
+            s.collected = true; starsCount++; updateUI(); updateMusic();
+        }
+    });
+
+    fishes.forEach(f => {
+        f.x -= speed;
+        if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) {
+            f.collected = true; activatePowerUp();
+        }
+    });
+
+    catV += GAME_CONFIG.gravity; catY += catV;
+    if (catY > H || catY < 0) { gameOver(); }
+    rollAngle += 0.07; 
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = (gameState === 'MENU') ? 0.9 : 0.75;
+    if (assets[selectedBG].complete) ctx.drawImage(assets[selectedBG], 0, 0, W, H);
+    ctx.globalAlpha = 1;
+
+    if (gameState === 'PLAY' || gameState === 'OVER') {
+        catPaws.forEach(p => {
+            ctx.save();
+            if (activePower === 'SHIELD') ctx.globalAlpha = 0.45;
+            ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
+            ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); ctx.restore();
+        });
+        stars.forEach(s => {
+            if (s.collected) return;
+            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
+            ctx.shadowBlur = 20; ctx.shadowColor = "gold"; ctx.fillStyle = "#FFD700"; ctx.beginPath();
+            for(let i=0; i<5; i++) { 
+                ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*16, -Math.sin((18+i*72)*Math.PI/180)*16); 
+                ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8, -Math.sin((54+i*72)*Math.PI/180)*8); 
+            }
+            ctx.closePath(); ctx.fill(); ctx.restore();
+        });
+        fishes.forEach(f => { 
+            if (!f.collected) { 
+                ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = "white"; 
+                ctx.drawImage(assets.fish, f.x - 35, f.y - 35, 70, 70); ctx.restore(); 
+            } 
+        });
+        if (activePower) { 
+            ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 52, 0, Math.PI * 2); 
+            ctx.shadowBlur = 20; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.9)"; 
+            ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill(); ctx.restore(); 
+        }
+        ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle);
+        ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
+    }
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+document.getElementById('start-trigger').onclick = () => { 
+    gameState = 'PLAY'; 
+    menuOverlay.style.opacity='0'; 
+    setTimeout(()=>menuOverlay.style.display='none', 600); 
+    uiLayer.style.display = 'block'; 
+    updateMusic(); updateUI(); 
+};
+window.addEventListener('touchstart', (e) => { 
+    if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } 
+}, {passive:false});
+loop();
+</script>
+</body>
+</html>

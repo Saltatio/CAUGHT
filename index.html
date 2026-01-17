@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Polished Edition</title>
+    <title>Caught! - Balanced Gaps</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); --glow: 0 0 15px rgba(255, 215, 0, 0.7); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -14,48 +14,41 @@
         .overlay { 
             position: absolute; inset: 0; z-index: 20; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            background: rgba(0,0,0,0.35); /* Transparent enough to see BG */
+            background: rgba(0,0,0,0.35); 
             color: white; text-align: center; padding: 20px; 
             backdrop-filter: blur(5px);
         }
 
-        /* Interactive Cat Cards */
         .char-grid { display: flex; gap: 15px; margin: 25px 0; }
         .char-card { 
             width: 85px; height: 85px; border-radius: 20px; 
             background: var(--glass); border: 3px solid rgba(255,255,255,0.1); 
             display: flex; align-items: center; justify-content: center; 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer;
+            transition: all 0.4s ease; cursor: pointer;
         }
-        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.25); transform: scale(1.15); box-shadow: var(--glow); }
+        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.25); transform: scale(1.1); box-shadow: var(--glow); }
         .char-card img { width: 65px; height: 65px; transition: transform 0.6s ease; }
         .char-card:hover img { transform: rotate(360deg); }
 
-        /* Glowing World Buttons */
         .world-btn { 
             width: 220px; padding: 14px; border-radius: 30px; 
             border: 2px solid rgba(255,255,255,0.3); background: var(--glass); 
             color: white; margin: 8px 0; cursor: pointer; font-weight: bold;
-            letter-spacing: 1px; transition: all 0.3s ease;
+            transition: all 0.3s ease;
         }
-        .world-btn.selected { 
-            background: var(--gold); border-color: #fff; color: #000; 
-            box-shadow: var(--glow); transform: translateY(-2px);
-        }
+        .world-btn.selected { background: var(--gold); border-color: #fff; color: #000; box-shadow: var(--glow); }
 
         .action-btn { 
             padding: 20px 70px; font-size: 24px; border-radius: 50px; 
             border: none; background: #fff; color: #000; font-weight: 900; 
-            margin-top: 35px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            transition: 0.2s;
+            margin-top: 35px; cursor: pointer;
         }
-        .action-btn:active { transform: scale(0.95); }
 
         #splash-text {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-size: 55px; font-weight: 900; pointer-events: none;
             z-index: 30; opacity: 0; transition: opacity 0.2s ease;
-            text-shadow: 0 0 35px rgba(255,255,255,1);
+            text-shadow: 0 0 35px white;
         }
     </style>
 </head>
@@ -66,36 +59,32 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
-            <h1 style="color: var(--gold); font-size: 55px; margin-bottom: 5px; text-shadow: 3px 3px 15px #000; letter-spacing: 8px;">CAUGHT!</h1>
-            <p style="margin-top:0; font-weight: 300; opacity: 0.8;">CHOOSE YOUR CAT</p>
-            
+            <h1 style="color: var(--gold); font-size: 55px; text-shadow: 3px 3px 15px #000; letter-spacing: 8px;">CAUGHT!</h1>
             <div class="char-grid">
                 <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
                 <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
                 <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
             </div>
-
             <div style="display:flex; flex-direction:column;">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
             </div>
-
             <button class="action-btn" id="start-trigger">START GAME</button>
         </div>
 
-        <div id="end-overlay" class="overlay" style="display: none; background: rgba(0,0,0,0.85);">
-            <h1 style="color: #ff4d4d; font-size: 50px; letter-spacing: 3px;">CAUGHT!</h1>
-            <p id="final-stats" style="font-size: 26px; font-weight: bold;"></p>
-            <button class="action-btn" onclick="location.reload()">TRY AGAIN</button>
+        <div id="end-overlay" class="overlay" style="display: none;">
+            <h1 style="color: #ff4d4d; font-size: 50px;">CAUGHT!</h1>
+            <p id="final-stats" style="font-size: 26px;"></p>
+            <button class="action-btn" onclick="location.reload()">RETRY</button>
         </div>
     </div>
 
 <script>
 const GAME_CONFIG = {
-    pawWidth: 400, pawHeight: 650, hitboxWidth: 140,
-    gapHeight: 300, gravity: 0.7, jumpStrength: -11,
-    spawnRate: 130, powerupDuration: 450
+    pawWidth: 400, pawHeight: 650,
+    gravity: 0.65, jumpStrength: -10.5,
+    spawnRate: 140, powerupDuration: 450
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -111,10 +100,13 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
+const musicTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
+musicTracks.forEach(t => { t.loop = true; t.volume = 0.5; });
+let currentTrackIdx = -1;
+
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0;
-let catX = 100, catY, catV = 0, catPaws = [], stars = [], particles = [], rollAngle = 0;
-let selectedCatImg = assets.cats[0], selectedBG = 'day', lastPowerUp = null, powerUpRepeatCount = 0;
-let activePower = null, powerTimer = 0;
+let catX = 100, catY, catV = 0, catPaws = [], stars = [], rollAngle = 0;
+let selectedCatImg = assets.cats[0], selectedBG = 'day', activePower = null, powerTimer = 0;
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
@@ -131,81 +123,78 @@ window.selectWorld = (id, el) => {
     el.classList.add('selected');
 };
 
-function pickPowerUp() {
-    const types = ['SHIELD', 'MAGNET', 'SLOW'];
-    let choice;
-    do { choice = types[Math.floor(Math.random() * types.length)]; } while (choice === lastPowerUp && powerUpRepeatCount >= 2);
-    if (choice === lastPowerUp) powerUpRepeatCount++; else { lastPowerUp = choice; powerUpRepeatCount = 1; }
-    return choice;
+function updateMusic() {
+    let trackIdx = Math.floor(starsCount / 20) % 3;
+    if (trackIdx !== currentTrackIdx) {
+        if (currentTrackIdx !== -1) { musicTracks[currentTrackIdx].pause(); musicTracks[currentTrackIdx].currentTime = 0; }
+        currentTrackIdx = trackIdx;
+        musicTracks[currentTrackIdx].play().catch(() => {});
+    }
 }
 
 function activatePowerUp() {
-    activePower = pickPowerUp();
+    const types = ['SHIELD', 'MAGNET', 'SLOW'];
+    activePower = types[Math.floor(Math.random() * 3)];
     powerTimer = GAME_CONFIG.powerupDuration;
-    splashUI.innerText = activePower;
-    splashUI.style.opacity = '1';
+    splashUI.innerText = activePower; splashUI.style.opacity = '1';
     setTimeout(() => { splashUI.style.opacity = '0'; }, 1500);
-}
-
-function createBurst(x, y) {
-    for (let i = 0; i < 12; i++) {
-        const angle = (Math.PI * 2 / 12) * i;
-        particles.push({ x, y, vx: Math.cos(angle)*6, vy: Math.sin(angle)*6, life: 1, size: 4 });
-    }
 }
 
 function update() {
     if (gameState !== 'PLAY') return;
     frames++;
-    let currentSpeedMult = (activePower === 'SLOW') ? 0.4 : 1.0;
-    let speed = (W * 0.012 + (score * 0.1)) * currentSpeedMult;
+
+    let speedMult = (activePower === 'SLOW') ? 0.4 : 1.0;
+    let speed = (W * 0.01 + (score * 0.08)) * speedMult;
     
     if (powerTimer > 0) {
         powerTimer--;
         if (powerTimer <= 0) activePower = null;
     }
 
-    if (frames % Math.floor(GAME_CONFIG.spawnRate / currentSpeedMult) === 0) {
-        let h = Math.random() * (H - 500) + 100;
-        catPaws.push({ x: W + 100, yT: h, yB: h + GAME_CONFIG.gapHeight, passed: false });
-        stars.push({ x: W + 100 + 200, y: h + 150, collected: false, spin: 0 });
+    if (frames % Math.floor(GAME_CONFIG.spawnRate / speedMult) === 0) {
+        // Updated Gap Logic: 120 - 200
+        let gap = Math.random() * 80 + 120; 
+        let h = Math.random() * (H - gap - 240) + 120;
+        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
+        stars.push({ x: W + 100 + 200, y: h + (gap / 2), collected: false, spin: 0 });
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
-        let left = p.x + 130, right = p.x + 270;
-        if (catX + 18 > left && catX - 18 < right) {
-            if (catY - 18 < p.yT || catY + 18 > p.yB) {
+        let catR = 20; 
+        let pLeft = p.x + 140, pRight = p.x + 260;
+        if (catX + catR > pLeft && catX - catR < pRight) {
+            if (catY - catR < p.yT || catY + catR > p.yB) {
                 if (activePower === 'SHIELD') { activePower = null; powerTimer = 0; p.passed = true; }
-                else { triggerGameOver(); }
+                else { gameState = 'OVER'; if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause(); showEnd(); }
             }
         }
-        if (!p.passed && p.x + 400 < catX) { score++; p.passed = true; }
+        if (!p.passed && p.x + 300 < catX) { score++; p.passed = true; }
     });
 
     stars.forEach(s => {
         s.x -= speed;
-        if (activePower === 'MAGNET') {
-            s.spin += 0.4; 
-            let dx = catX - s.x, dy = catY - s.y;
-            if (Math.sqrt(dx*dx + dy*dy) < 500) { s.x += dx * 0.18; s.y += dy * 0.18; }
-        } else { s.spin += 0.05; }
-        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 65) {
+        s.spin += (activePower === 'MAGNET') ? 0.4 : 0.05;
+        if (activePower === 'MAGNET' && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 500) {
+            s.x += (catX - s.x) * 0.18; s.y += (catY - s.y) * 0.18;
+        }
+        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) {
             s.collected = true; starsCount++;
-            createBurst(s.x, s.y);
+            updateMusic();
             if (starsCount % 10 === 0) activatePowerUp();
         }
     });
 
-    particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.03; if(p.life<=0) particles.splice(i,1); });
     catV += GAME_CONFIG.gravity; catY += catV;
-    if (catY > H || catY < 0) triggerGameOver();
-    rollAngle += 0.15;
+    if (catY > H || catY < 0) { gameState = 'OVER'; if(currentTrackIdx!==-1) musicTracks[currentTrackIdx].pause(); showEnd(); }
+    rollAngle += 0.07; 
 }
+
+function showEnd() { document.getElementById('final-stats').innerText = `STARS: ${starsCount}`; document.getElementById('end-overlay').style.display='flex'; }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    
     ctx.globalAlpha = (gameState === 'MENU') ? 0.9 : 0.4;
     if (assets[selectedBG].complete) ctx.drawImage(assets[selectedBG], 0, 0, W, H);
     ctx.globalAlpha = 1;
@@ -213,7 +202,7 @@ function draw() {
     if (gameState === 'PLAY') {
         catPaws.forEach(p => {
             ctx.save();
-            if (activePower === 'SHIELD') ctx.globalAlpha = 0.4; 
+            if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
             ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
             ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
             ctx.restore();
@@ -222,6 +211,7 @@ function draw() {
         stars.forEach(s => {
             if (s.collected) return;
             ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin);
+            ctx.shadowBlur = 25; ctx.shadowColor = "gold";
             ctx.fillStyle = "#FFD700"; ctx.beginPath();
             for(let i=0; i<5; i++) {
                 ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*16, -Math.sin((18+i*72)*Math.PI/180)*16);
@@ -232,28 +222,22 @@ function draw() {
 
         if (activePower) {
             ctx.save(); ctx.beginPath(); ctx.arc(catX, catY, 55, 0, Math.PI * 2);
-            ctx.shadowBlur = 18; ctx.shadowColor = "white";
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; ctx.lineWidth = 4; ctx.stroke();
-            ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; ctx.fill(); ctx.restore();
+            ctx.shadowBlur = 18; ctx.shadowColor = "white"; ctx.strokeStyle = "rgba(255,255,255,0.7)";
+            ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.fill(); ctx.restore();
         }
 
         ctx.save(); ctx.translate(catX, catY); ctx.rotate(rollAngle);
         ctx.drawImage(selectedCatImg, -40, -40, 80, 80); ctx.restore();
-
-        particles.forEach(p => {
-            ctx.globalAlpha = p.life; ctx.fillStyle = "#FFD700";
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-        });
-
-        ctx.globalAlpha = 1; ctx.fillStyle = "white"; ctx.font = "bold 24px Arial";
-        ctx.fillText(`STARS: ${starsCount}`, 25, 45);
     }
 }
 
-function triggerGameOver() { gameState = 'OVER'; document.getElementById('final-stats').innerText = `STARS COLLECTED: ${starsCount}`; document.getElementById('end-overlay').style.display='flex'; }
 function loop() { update(); draw(); requestAnimationFrame(loop); }
 
-document.getElementById('start-trigger').onclick = () => { gameState = 'PLAY'; menuOverlay.style.display='none'; };
+document.getElementById('start-trigger').onclick = () => { 
+    gameState = 'PLAY'; menuOverlay.style.display='none';
+    updateMusic(); 
+};
+
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } }, {passive:false});
 loop();
 </script>

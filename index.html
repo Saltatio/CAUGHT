@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Master Edition</title>
+    <title>Caught! - Shield Master</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -13,7 +13,7 @@
             overflow: hidden; touch-action: none; 
         }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #222; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; z-index: 2; transition: filter 0.8s ease; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; padding-top: 25px; }
         .hud-center-stack { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 18px; width: 250px; }
@@ -89,7 +89,6 @@ const uiLayer = document.getElementById('ui-layer');
 const starDisplay = document.getElementById('star-display');
 const progressFill = document.getElementById('progress-fill');
 
-// Assets
 const assets = { 
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(), cats: [new Image(), new Image(), new Image()] 
@@ -98,13 +97,10 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
-// Audio setup with explicit Fix for Autoplay
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
-
 tracks.forEach(t => { t.loop = true; t.volume = 0.2; }); 
-meowSfx.volume = 1.0; // Boosted to ensure it's heard
-meowSfx.preload = 'auto';
+meowSfx.volume = 1.0;
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
@@ -136,8 +132,7 @@ function updateUI() {
 
 function playMeow() {
     meowSfx.currentTime = 0;
-    // Promise handling for modern browser audio policies
-    meowSfx.play().catch(e => console.log("Audio play blocked until interaction:", e));
+    meowSfx.play().catch(e => {});
 }
 
 function activatePower() {
@@ -163,11 +158,10 @@ function update() {
     let distanceCheck = !lastPaw || (W - lastPaw.x) > CONFIG.minPawDistance;
 
     if (frames % Math.floor(currentSpawnRate / sMult) === 0 && distanceCheck) {
-        let gap = Math.random() * 100 + 150;
+        let gap = Math.random() * 100 + 170;
         let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
-        
         if (fishPending) {
             fishes.push({ x: sx + 150, by: h + (gap / 2), y: h + (gap / 2), collected: false });
             fishPending = false; 
@@ -176,13 +170,29 @@ function update() {
         }
     }
 
-    paws.forEach((p, i) => { p.x -= speed; if(p.x < -400) paws.splice(i, 1); });
+    paws.forEach((p, i) => { 
+        p.x -= speed; 
+        // Collision Detection
+        if (catX + 25 > p.x + 150 && catX - 25 < p.x + 250) {
+            if (catY - 25 < p.yT || catY + 25 > p.yB) {
+                if (activePower === 'SHIELD') {
+                    activePower = null; pTimer = 0; p.passed = true;
+                    createBurst(catX, catY);
+                } else if (!p.passed) {
+                    gameOver();
+                }
+            }
+        }
+        if (!p.passed && p.x + 200 < catX) { score++; p.passed = true; }
+        if (p.x < -400) paws.splice(i, 1);
+    });
+
     stars.forEach((s, i) => {
         s.x -= speed; s.rot += 0.05;
         if (activePower === 'MAGNET' && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 400) {
             s.x += (catX - s.x) * 0.12; s.y += (catY - s.y) * 0.12;
         }
-        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 60) {
+        if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 50) {
             s.collected = true; starsCount++; createBurst(s.x, s.y); updateUI();
         }
     });
@@ -192,16 +202,6 @@ function update() {
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) {
             f.collected = true; activatePower();
         }
-    });
-
-    paws.forEach(p => {
-        if (catX+20 > p.x+140 && catX-20 < p.x+260) {
-            if (catY-20 < p.yT || catY+20 > p.yB) {
-                if (activePower === 'SHIELD') { activePower = null; pTimer = 0; p.passed = true; createBurst(catX, catY); }
-                else gameOver();
-            }
-        }
-        if (!p.passed && p.x + 300 < catX) { score++; p.passed = true; }
     });
 
     particles.forEach((p, i) => {
@@ -232,8 +232,12 @@ function draw() {
     
     paws.forEach(p => {
         ctx.save();
+        // Shield Function: Paws fade when player has shield
+        if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        
         ctx.save(); ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
-        ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); ctx.restore();
+        ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); 
+        ctx.restore();
     });
 
     stars.forEach(s => { 
@@ -262,15 +266,12 @@ function draw() {
 function gameOver() { gameState = 'OVER'; document.getElementById('final-stats').innerText = starsCount; document.getElementById('end-overlay').classList.add('visible'); }
 function loop() { update(); draw(); requestAnimationFrame(loop); }
 
-// Start Game Handler
 document.getElementById('start-trigger').onclick = () => { 
     gameState = 'PLAY'; 
     menuOverlay.style.display = 'none'; 
     uiLayer.style.display = 'block'; 
-    
-    // Resume/Start Audio context on first click
     tracks[0].play();
-    playMeow(); // One silent meow to unlock the audio engine
+    playMeow();
 };
 
 window.addEventListener('touchstart', (e) => { 

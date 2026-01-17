@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Gold Magnet Edition</title>
+    <title>Caught! - Audio Fixed</title>
     <style>
         :root { --gold: #FFD700; --glass: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -136,42 +136,68 @@ function createBurst(x, y) {
     }
 }
 
+// IMPROVED AUDIO ENGINE - PREVENTS OVERLAP
 function crossfade(oldIdx, newIdx) {
-    if (isFading) return;
+    if (isFading || oldIdx === newIdx) return;
     isFading = true;
-    let oldT = tracks[oldIdx];
-    let newT = tracks[newIdx];
-    newT.currentTime = 0;
-    newT.play().catch(e => {});
 
-    let interval = setInterval(() => {
-        if (oldT.volume > 0.01) {
-            oldT.volume -= 0.01;
+    const oldT = tracks[oldIdx];
+    const newT = tracks[newIdx];
+
+    // Ensure all other tracks are silent and stopped
+    tracks.forEach((t, i) => {
+        if (i !== oldIdx && i !== newIdx) {
+            t.pause();
+            t.volume = 0;
+        }
+    });
+
+    newT.volume = 0;
+    newT.play().catch(e => console.log("Audio play blocked"));
+
+    let step = 0.01;
+    let fadeInterval = setInterval(() => {
+        let doneOld = false;
+        let doneNew = false;
+
+        if (oldT.volume > step) {
+            oldT.volume -= step;
         } else {
             oldT.volume = 0;
             oldT.pause();
-            if (newT.volume < CONFIG.maxVol) {
-                newT.volume += 0.01;
-            } else {
-                newT.volume = CONFIG.maxVol;
-                clearInterval(interval);
-                isFading = false;
-            }
+            doneOld = true;
         }
-    }, 30);
+
+        if (newT.volume < CONFIG.maxVol - step) {
+            newT.volume += step;
+        } else {
+            newT.volume = CONFIG.maxVol;
+            doneNew = true;
+        }
+
+        if (doneOld && doneNew) {
+            clearInterval(fadeInterval);
+            isFading = false;
+        }
+    }, 40);
 }
 
 function updateMilestones() {
     starDisplay.innerText = starsCount;
+    
+    // Fish Logic: Immediately flag for next spawn at 10 star intervals
     if (starsCount > 0 && starsCount % 10 === 0 && starsCount !== lastMilestone) {
         fishPending = true;
         lastMilestone = starsCount;
     }
+    
     progressFill.style.width = ((starsCount % 10) / 10 * 100) + "%";
-    let nextIdx = Math.floor(starsCount / 20) % tracks.length;
-    if (nextIdx !== currentTrackIdx) {
-        crossfade(currentTrackIdx, nextIdx);
-        currentTrackIdx = nextIdx;
+
+    // Audio Logic: Switch exactly every 20 stars
+    let targetTrackIdx = Math.floor(starsCount / 20) % tracks.length;
+    if (targetTrackIdx !== currentTrackIdx) {
+        crossfade(currentTrackIdx, targetTrackIdx);
+        currentTrackIdx = targetTrackIdx;
     }
 }
 
@@ -207,8 +233,13 @@ function update() {
         let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
-        if (fishPending) { fishes.push({ x: sx + 120, by: h + (gap / 2), y: h + (gap / 2), collected: false }); fishPending = false; } 
-        else { stars.push({ x: sx + 120, y: h + (gap / 2), collected: false, rot: 0 }); }
+        
+        if (fishPending) {
+            fishes.push({ x: sx + 120, by: h + (gap / 2), y: h + (gap / 2), collected: false });
+            fishPending = false; 
+        } else {
+            stars.push({ x: sx + 120, y: h + (gap / 2), collected: false, rot: 0 });
+        }
     }
 
     paws.forEach((p, i) => { 
@@ -224,24 +255,19 @@ function update() {
     });
 
     stars.forEach(s => {
-        s.x -= speed; 
-        s.rot += 0.05;
+        s.x -= speed; s.rot += 0.05;
 
         if (activePower === 'MAGNET') {
             let dx = catX - s.x;
             let dy = catY - s.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
-            
             if (dist < 400) {
-                // Star "rolls" faster as it gets closer
                 s.rot += (1 - (dist / 400)) * 0.5;
-                // Suction pull with slight vertical curve
                 s.x += dx * 0.08;
-                s.y += dy * 0.08 + Math.sin(frames * 0.1) * 2;
+                s.y += dy * 0.08;
             }
         }
 
-        // Must reach inner core (40px) to be caught
         if (!s.collected && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 40) {
             s.collected = true; starsCount++; createBurst(s.x, s.y); updateMilestones();
         }
@@ -285,7 +311,6 @@ function draw() {
         drawStarShape(0, 0, p.size, 5, p.size/2); ctx.restore();
     });
 
-    // POWER-UP VISUALS
     if (activePower === 'SHIELD') {
         ctx.save(); let pulse = Math.sin(frames * 0.12) * 4;
         let alpha = (pTimer < 120 && frames % 8 < 4) ? 0 : 0.85;
@@ -302,12 +327,8 @@ function draw() {
         ctx.save(); let pulse = Math.sin(frames * 0.15) * 8;
         ctx.translate(catX, catY); ctx.globalAlpha = 0.6;
         ctx.strokeStyle = "gold"; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = "gold";
-        // Rotating Gold Ring
         ctx.rotate(frames * 0.05);
         ctx.beginPath(); ctx.arc(0, 0, 75 + pulse, 0, Math.PI*2); ctx.stroke();
-        // Inner Pulse
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, 45 - pulse/2, 0, Math.PI*2); ctx.stroke();
         ctx.restore();
     }
 
@@ -315,7 +336,11 @@ function draw() {
 }
 
 function gameOver() { 
-    gameState = 'OVER'; tracks.forEach(t => { t.pause(); t.volume = 0; });
+    gameState = 'OVER'; 
+    // Hard stop all music immediately
+    tracks.forEach(t => { t.pause(); t.volume = 0; t.currentTime = 0; });
+    isFading = false;
+
     if (starsCount > highScore) {
         highScore = starsCount;
         localStorage.setItem('caught_best', highScore);
@@ -329,7 +354,11 @@ function gameOver() {
 function loop() { update(); draw(); requestAnimationFrame(loop); }
 document.getElementById('start-trigger').onclick = () => { 
     gameState = 'PLAY'; menuOverlay.style.display = 'none'; uiLayer.style.display = 'block'; 
-    currentTrackIdx = 0; tracks[0].volume = CONFIG.maxVol; tracks[0].play().catch(e => {});
+    // Reset audio state for clean start
+    tracks.forEach(t => { t.pause(); t.volume = 0; t.currentTime = 0; });
+    currentTrackIdx = 0; 
+    tracks[0].volume = CONFIG.maxVol; 
+    tracks[0].play().catch(e => console.log("Play blocked"));
 };
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 loop();

@@ -3,30 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Mobile Final Fix</title>
+    <title>Caught! - Clean UI Edition</title>
     <style>
-        :root { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+        :root { --gold: #DAA520; --bg-glass: rgba(255, 255, 255, 0.15); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { 
             margin: 0; background: #000; display: flex; justify-content: center; align-items: center; 
-            height: 100vh; font-family: sans-serif; overflow: hidden; touch-action: none; 
+            height: 100vh; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; touch-action: none; 
         }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; }
-        
-        #start-overlay { 
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; z-index: 1; }
+
+        /* --- CLEAN UI OVERLAY --- */
+        #menu-overlay { 
             position: absolute; inset: 0; z-index: 20; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.4); pointer-events: none; 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-around;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.4), rgba(0,0,0,0.8));
+            padding: 40px 20px; color: white; transition: opacity 0.3s;
         }
+
+        .menu-section { width: 100%; text-align: center; }
+        .section-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; color: var(--gold); font-weight: bold; }
+
+        /* Character Select Cards */
+        .char-grid { display: flex; justify-content: center; gap: 15px; }
+        .char-card { 
+            width: 80px; height: 80px; border-radius: 15px; background: var(--bg-glass);
+            border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s; cursor: pointer;
+        }
+        .char-card.selected { border-color: var(--gold); background: rgba(218, 165, 32, 0.2); transform: scale(1.1); }
+        .char-card img { width: 60px; height: 60px; object-fit: contain; }
+
+        /* World Select Buttons */
+        .world-list { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .world-btn { 
+            width: 200px; padding: 12px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.3);
+            background: var(--bg-glass); color: white; font-size: 16px; cursor: pointer; transition: 0.2s;
+        }
+        .world-btn.selected { background: var(--gold); border-color: var(--gold); font-weight: bold; box-shadow: 0 0 15px var(--gold); }
+
         #start-button { 
-            pointer-events: auto; padding: 22px 65px; font-size: 26px; border-radius: 60px; 
-            border: none; background: #DAA520; color: #fff; font-weight: bold; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6); cursor: pointer;
-            -webkit-appearance: none;
+            padding: 18px 80px; font-size: 24px; border-radius: 50px; 
+            border: none; background: #fff; color: #000; font-weight: 900; 
+            box-shadow: 0 5px 20px rgba(255,255,255,0.3); cursor: pointer;
+            transition: transform 0.1s active;
         }
+
         #seasonal-gif { 
             position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
-            opacity: 0.15; z-index: 5; pointer-events: none; mix-blend-mode: screen; display: none; 
+            opacity: 0.2; z-index: 5; pointer-events: none; mix-blend-mode: screen; display: none; 
         }
     </style>
 </head>
@@ -34,10 +60,30 @@
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        <img id="seasonal-gif" src="" alt="seasonal-effect">
-        <div id="start-overlay">
-            <h1 style="color:white; font-size: 45px; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.9);">CAUGHT!</h1>
-            <button id="start-button">PLAY NOW</button>
+        <img id="seasonal-gif" src="" alt="">
+
+        <div id="menu-overlay">
+            <h1 style="font-size: 50px; margin: 0; letter-spacing: -2px;">CAUGHT!</h1>
+
+            <div class="menu-section">
+                <div class="section-title">Select Character</div>
+                <div class="char-grid">
+                    <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png" alt="Cat 1"></div>
+                    <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png" alt="Cat 2"></div>
+                    <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png" alt="Cat 3"></div>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <div class="section-title">Select World</div>
+                <div class="world-list">
+                    <button class="world-btn selected" onclick="selectWorld('day', this)">MORNING</button>
+                    <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
+                    <button class="world-btn" onclick="selectWorld('evening', this)">NIGHT</button>
+                </div>
+            </div>
+
+            <button id="start-button">START</button>
         </div>
     </div>
 
@@ -45,7 +91,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const gifElement = document.getElementById('seasonal-gif');
-const startOverlay = document.getElementById('start-overlay');
+const menuOverlay = document.getElementById('menu-overlay');
 const startButton = document.getElementById('start-button');
 
 let W, H, bgX = 0;
@@ -60,37 +106,38 @@ resize();
 const assets = {
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(),
-    cat_default: new Image(), cat_black: new Image(), cat_tabby: new Image()
+    cats: [new Image(), new Image(), new Image()]
 };
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
-assets.cat_default.src = 'cat.png'; assets.cat_black.src = 'cat_black.png'; assets.cat_tabby.src = 'cat_tabby.png';
+assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
-const musicFiles = ['spring.mp3','summer.mp3','autumn.mp3'];
-const musicTracks = musicFiles.map(f => { let a = new Audio(f); a.loop = true; a.volume = 0; return a; });
+const musicTracks = ['spring.mp3','summer.mp3','autumn.mp3'].map(f => { 
+    let a = new Audio(f); a.loop = true; a.volume = 0; return a; 
+});
 const timeGifs = ['spring.gif', 'summer.gif', 'autumn.gif'];
 
 // --- STATE ---
 let gameState = 'MAIN_MENU', score = 0, starsCount = 0, frames = 0, lastCycleIdx = -1;
 let catX = 80, catY = H/2, catV = 0, catPaws = [], stars = [], powerUps = [], particles = [], rollAngle = 0;
-let selectedCatImg = assets.cat_default, activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
+let selectedCatImg = assets.cats[0], activePower = null, powerTimer = 0, splashText = "", splashTimer = 0;
 let selectedBG = 'day', lastTime = performance.now();
 
-const charOptions = [
-    { img: assets.cat_default, x: 0 },
-    { img: assets.cat_black, x: 0 },
-    { img: assets.cat_tabby, x: 0 }
-];
+// --- MENU ACTIONS ---
+window.selectChar = (idx, el) => {
+    selectedCatImg = assets.cats[idx];
+    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+};
 
-const worldOptions = [
-    { id: 'day', label: 'MORNING' },
-    { id: 'afternoon', label: 'NOON' },
-    { id: 'evening', label: 'NIGHT' }
-];
+window.selectWorld = (id, el) => {
+    selectedBG = id;
+    document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+};
 
-// --- CORE FUNCTIONS ---
 function createBurst(x, y) {
-    for(let i=0; i<10; i++) {
+    for(let i=0; i<12; i++) {
         particles.push({
             x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
             life: 1.0, size: Math.random()*3+2, color: '#FFD700'
@@ -98,24 +145,16 @@ function createBurst(x, y) {
     }
 }
 
-function resetGame() {
-    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; particles = [];
-    score = 0; starsCount = 0; lastCycleIdx = -1; frames = 0;
-}
-
 function update(dt) {
-    if (gameState === 'MAIN_MENU') return;
     if (gameState !== 'PLAY') return;
 
     frames++;
-    // Music Sync
     let idx = Math.floor(starsCount / 20) % 3;
     if (idx !== lastCycleIdx) {
         gifElement.src = timeGifs[idx]; gifElement.style.display = 'block'; lastCycleIdx = idx;
     }
     musicTracks.forEach((t, i) => {
-        if (i === idx) t.volume = Math.min(t.volume + 0.02, 0.4);
-        else t.volume = Math.max(t.volume - 0.05, 0);
+        t.volume = (i === idx) ? Math.min(t.volume + 0.02, 0.4) : Math.max(t.volume - 0.05, 0);
     });
 
     let speed = (W * 0.012 + (score * 0.1)) * (activePower === 'SLOW' ? 0.5 : 1);
@@ -125,7 +164,6 @@ function update(dt) {
     if (powerTimer > 0) powerTimer--; else activePower = null;
     if (splashTimer > 0) splashTimer--;
 
-    // Spawning
     if (frames % 100 === 0) {
         let gap = H * 0.32, h = Math.random() * (H - gap - 300) + 150;
         catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
@@ -135,7 +173,6 @@ function update(dt) {
         }
     }
 
-    // Physics & Collisions
     catPaws.forEach(p => {
         p.x -= speed;
         if (catX + 30 > p.x && catX - 30 < p.x + 150) {
@@ -160,48 +197,24 @@ function update(dt) {
 
     particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.025; });
     particles = particles.filter(p => p.life > 0);
-    
     catV += 0.65; catY += catV;
     if (catY > H + 50 || catY < -50) triggerGameOver();
 }
 
 function triggerGameOver() {
     gameState = 'GAMEOVER';
-    musicTracks.forEach(t => { t.pause(); t.currentTime = 0; t.volume = 0; });
-    startOverlay.style.display = 'flex';
+    musicTracks.forEach(t => t.pause());
+    menuOverlay.style.display = 'flex';
+    menuOverlay.style.opacity = '1';
 }
 
-// --- DRAWING ---
 function draw() {
     ctx.clearRect(0, 0, W, H);
-    
     if (assets[selectedBG].complete) {
         ctx.globalAlpha = 0.5;
         ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
         ctx.drawImage(assets[selectedBG], bgX + W, 0, W, H);
         ctx.globalAlpha = 1;
-    }
-
-    if (gameState === 'MAIN_MENU' || gameState === 'GAMEOVER') {
-        ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#222"; ctx.textAlign="center"; ctx.font="bold 24px sans-serif";
-        ctx.fillText("CHOOSE YOUR CAT", W/2, H*0.22);
-        
-        charOptions.forEach((opt, i) => {
-            let x = W/2 + (i-1)*100; opt.x = x;
-            if (selectedCatImg === opt.img) {
-                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 5; ctx.strokeRect(x-45, H*0.35-45, 90, 90);
-            }
-            ctx.drawImage(opt.img, x-40, H*0.35-40, 80, 80);
-        });
-
-        ctx.fillStyle = "#222"; ctx.fillText("SELECT WORLD", W/2, H*0.55);
-        worldOptions.forEach((opt, i) => {
-            let y = H*0.65 + i*55; opt.y = y;
-            ctx.fillStyle = selectedBG === opt.id ? "#DAA520" : "#999";
-            ctx.font = selectedBG === opt.id ? "bold 28px sans-serif" : "22px sans-serif";
-            ctx.fillText(opt.label, W/2, y);
-        });
     }
 
     if (gameState === 'PLAY' || gameState === 'GAMEOVER') {
@@ -225,15 +238,12 @@ function draw() {
         if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
         ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
 
-        ctx.fillStyle = "#333"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="left";
+        ctx.fillStyle = "#fff"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="left";
         ctx.fillText(`Stars: ${starsCount}`, 25, 55);
-        ctx.textAlign="right"; ctx.font="bold 12px sans-serif"; ctx.fillText("POWER UP", W-25, 40);
-        ctx.fillStyle="#ddd"; ctx.fillRect(W-125, 48, 100, 10);
-        ctx.fillStyle="#DAA520"; ctx.fillRect(W-125, 48, (starsCount % 10)*10, 10);
     }
 
     if (splashTimer > 0) {
-        ctx.fillStyle = "#333"; ctx.font = "bold 60px sans-serif"; ctx.textAlign="center";
+        ctx.fillStyle = "#fff"; ctx.font = "bold 60px sans-serif"; ctx.textAlign="center";
         ctx.fillText(splashText, W/2, H/2);
     }
 }
@@ -243,44 +253,18 @@ function loop(t) {
 }
 
 // --- INPUTS ---
-function handleInput(e) {
-    if (e.type === 'touchstart') e.preventDefault();
-    const touch = e.touches ? e.touches[0] : e;
-    const rect = canvas.getBoundingClientRect();
-    const x = (touch.clientX - rect.left) * (W / rect.width);
-    const y = (touch.clientY - rect.top) * (H / rect.height);
-
-    if (gameState === 'MAIN_MENU' || gameState === 'GAMEOVER') {
-        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 50 && Math.abs(y - H*0.35) < 50) selectedCatImg = opt.img; });
-        worldOptions.forEach(opt => { if (Math.abs(x - W/2) < 120 && Math.abs(y - opt.y) < 30) selectedBG = opt.id; });
-    } else if (gameState === 'PLAY') {
-        catV = -11.5;
-    }
-}
-
-canvas.addEventListener('touchstart', handleInput, {passive: false});
-canvas.addEventListener('mousedown', handleInput);
-
-startButton.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    startTheGame();
+window.addEventListener('touchstart', (e) => {
+    if (gameState === 'PLAY') { e.preventDefault(); catV = -11.5; }
 }, {passive: false});
 
 startButton.addEventListener('click', (e) => {
     e.stopPropagation();
-    startTheGame();
+    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
+    menuOverlay.style.display = 'none';
+    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; score = 0; starsCount = 0;
+    gameState = 'PLAY';
 });
 
-function startTheGame() {
-    // Mobile browsers need this to unlock audio
-    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
-    startOverlay.style.display = 'none';
-    resetGame();
-    gameState = 'PLAY';
-}
-
-// Start drawing immediately
 requestAnimationFrame(loop);
 </script>
 </body>

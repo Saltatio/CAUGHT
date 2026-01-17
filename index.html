@@ -80,7 +80,7 @@
     </div>
 
 <script>
-const CONFIG = { gravity: 0.65, jump: -10.5, powerDuration: 450 };
+const CONFIG = { gravity: 0.65, jump: -10.5, powerDuration: 450, minPawDistance: 380 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const splashText = document.getElementById('splash-text');
@@ -89,6 +89,7 @@ const uiLayer = document.getElementById('ui-layer');
 const starDisplay = document.getElementById('star-display');
 const progressFill = document.getElementById('progress-fill');
 
+// Assets
 const assets = { 
     day: new Image(), afternoon: new Image(), evening: new Image(),
     paw: new Image(), fish: new Image(), cats: [new Image(), new Image(), new Image()] 
@@ -97,15 +98,17 @@ assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.eveni
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
+// Audio setup with explicit Fix for Autoplay
 const tracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
 const meowSfx = new Audio('meow.mp3'); 
 
 tracks.forEach(t => { t.loop = true; t.volume = 0.2; }); 
-meowSfx.volume = 0.8; 
+meowSfx.volume = 1.0; // Boosted to ensure it's heard
+meowSfx.preload = 'auto';
 
 let W, H, gameState = 'MENU', score = 0, starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 100, paws = [], stars = [], fishes = [], particles = [], roll = 0;
-let selCat = assets.cats[0], selBG = 'day', activePower = null, pTimer = 0, currentTrack = -1;
+let selCat = assets.cats[0], selBG = 'day', activePower = null, pTimer = 0;
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
@@ -116,13 +119,8 @@ window.selectWorld = (id, el) => { selBG = id; document.querySelectorAll('.world
 function createBurst(x, y) {
     for(let i=0; i<12; i++) {
         particles.push({ 
-            x, y, 
-            vx: (Math.random()-0.5)*12, 
-            vy: (Math.random()-0.5)*12, 
-            life: 1.0, 
-            rot: Math.random()*Math.PI, 
-            vr: (Math.random()-0.5)*0.2, 
-            size: Math.random()*5+2 
+            x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, 
+            life: 1.0, rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.2, size: Math.random()*5+2 
         });
     }
 }
@@ -136,8 +134,14 @@ function updateUI() {
     progressFill.style.width = prog + "%";
 }
 
+function playMeow() {
+    meowSfx.currentTime = 0;
+    // Promise handling for modern browser audio policies
+    meowSfx.play().catch(e => console.log("Audio play blocked until interaction:", e));
+}
+
 function activatePower() {
-    meowSfx.currentTime = 0; meowSfx.play().catch(()=>{}); 
+    playMeow(); 
     const types = ['SHIELD', 'MAGNET', 'SLOW'];
     activePower = types[Math.floor(Math.random()*3)]; 
     pTimer = CONFIG.powerDuration;
@@ -152,15 +156,15 @@ function update() {
     let sMult = (activePower === 'SLOW') ? 0.45 : 1.0;
     let speed = (W * 0.01 + (score * 0.08)) * sMult;
 
-    if (pTimer > 0) { 
-        pTimer--; 
-        if(pTimer <= 0) activePower = null;
-    }
+    if (pTimer > 0) { pTimer--; if(pTimer <= 0) activePower = null; }
 
     let currentSpawnRate = Math.max(80, 140 - (score * 2));
-    if (frames % Math.floor(currentSpawnRate / sMult) === 0) {
+    let lastPaw = paws[paws.length - 1];
+    let distanceCheck = !lastPaw || (W - lastPaw.x) > CONFIG.minPawDistance;
+
+    if (frames % Math.floor(currentSpawnRate / sMult) === 0 && distanceCheck) {
         let gap = Math.random() * 100 + 150;
-        let h = Math.random() * (H - gap - 240) + 120;
+        let h = Math.random() * (H - gap - 300) + 150;
         let sx = W + 100;
         paws.push({ x: sx, yT: h, yB: h + gap, passed: false });
         
@@ -172,8 +176,8 @@ function update() {
         }
     }
 
-    paws.forEach(p => p.x -= speed);
-    stars.forEach(s => {
+    paws.forEach((p, i) => { p.x -= speed; if(p.x < -400) paws.splice(i, 1); });
+    stars.forEach((s, i) => {
         s.x -= speed; s.rot += 0.05;
         if (activePower === 'MAGNET' && Math.sqrt((catX-s.x)**2 + (catY-s.y)**2) < 400) {
             s.x += (catX - s.x) * 0.12; s.y += (catY - s.y) * 0.12;
@@ -183,7 +187,7 @@ function update() {
         }
     });
 
-    fishes.forEach(f => {
+    fishes.forEach((f, i) => {
         f.x -= speed; f.y = f.by + Math.sin(frames * 0.05) * 20;
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-f.y)**2) < 60) {
             f.collected = true; activatePower();
@@ -217,13 +221,14 @@ function drawStarShape(x, y, r, p, ir) {
         let a = (i * Math.PI) / p;
         ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad);
     }
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
 }
 
 function draw() {
     ctx.clearRect(0,0,W,H);
+    ctx.save(); ctx.globalAlpha = 0.8;
     if (assets[selBG].complete) ctx.drawImage(assets[selBG], 0, 0, W, H);
+    ctx.restore();
     
     paws.forEach(p => {
         ctx.save();
@@ -233,46 +238,22 @@ function draw() {
 
     stars.forEach(s => { 
         if(!s.collected) { 
-            ctx.save(); 
-            ctx.translate(s.x, s.y); 
-            ctx.rotate(s.rot); 
-            ctx.shadowBlur = 15; 
-            ctx.shadowColor = "gold"; 
-            ctx.fillStyle = "gold"; 
-            drawStarShape(0, 0, 16, 5, 7);
-            ctx.restore(); 
+            ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot); ctx.shadowBlur = 15; ctx.shadowColor = "gold"; ctx.fillStyle = "gold"; drawStarShape(0, 0, 16, 5, 7); ctx.restore(); 
         } 
     });
 
     fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x-35, f.y-35, 70, 70); });
     
     particles.forEach(p => {
-        ctx.save();
-        ctx.globalAlpha = p.life;
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.fillStyle = "gold";
-        drawStarShape(0, 0, p.size, 5, p.size/2);
-        ctx.restore();
+        ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = "gold"; drawStarShape(0, 0, p.size, 5, p.size/2); ctx.restore();
     });
 
     if (activePower) {
         ctx.save();
-        let radius = 55;
-        let alpha = 1;
-        if (pTimer < 120) {
-            radius = 55 * (pTimer / 120);
-            alpha = (frames % 10 < 5) ? 0.3 : 1;
-        } else { radius = 55 + Math.sin(frames * 0.1) * 3; }
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(catX, catY, radius, 0, Math.PI*2);
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 4;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = "white";
-        ctx.stroke();
-        ctx.restore();
+        let radius = 55; let alpha = 1;
+        if (pTimer < 120) { radius = 55 * (pTimer / 120); alpha = (frames % 10 < 5) ? 0.3 : 1; }
+        else { radius = 55 + Math.sin(frames * 0.1) * 3; }
+        ctx.globalAlpha = alpha; ctx.beginPath(); ctx.arc(catX, catY, radius, 0, Math.PI*2); ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.stroke(); ctx.restore();
     }
 
     ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(selCat, -40, -40, 80, 80); ctx.restore();
@@ -280,8 +261,22 @@ function draw() {
 
 function gameOver() { gameState = 'OVER'; document.getElementById('final-stats').innerText = starsCount; document.getElementById('end-overlay').classList.add('visible'); }
 function loop() { update(); draw(); requestAnimationFrame(loop); }
-document.getElementById('start-trigger').onclick = () => { gameState = 'PLAY'; menuOverlay.style.display = 'none'; uiLayer.style.display = 'block'; tracks[0].play(); };
-window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
+
+// Start Game Handler
+document.getElementById('start-trigger').onclick = () => { 
+    gameState = 'PLAY'; 
+    menuOverlay.style.display = 'none'; 
+    uiLayer.style.display = 'block'; 
+    
+    // Resume/Start Audio context on first click
+    tracks[0].play();
+    playMeow(); // One silent meow to unlock the audio engine
+};
+
+window.addEventListener('touchstart', (e) => { 
+    if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } 
+}, {passive:false});
+
 loop();
 </script>
 </body>

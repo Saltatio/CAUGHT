@@ -2,30 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Caught! - Mobile Fixed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Caught! - Mobile Final Fix</title>
     <style>
         :root { -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { 
-            margin: 0; background: #111; display: flex; justify-content: center; align-items: center; 
-            height: 100vh; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; 
+            margin: 0; background: #000; display: flex; justify-content: center; align-items: center; 
+            height: 100vh; font-family: sans-serif; overflow: hidden; touch-action: none; 
         }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #000; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; z-index: 1; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #start-overlay { 
+            position: absolute; inset: 0; z-index: 20; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); pointer-events: none; 
+        }
+        #start-button { 
+            pointer-events: auto; padding: 22px 65px; font-size: 26px; border-radius: 60px; 
+            border: none; background: #DAA520; color: #fff; font-weight: bold; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); cursor: pointer;
+            -webkit-appearance: none;
+        }
         #seasonal-gif { 
             position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
             opacity: 0.15; z-index: 5; pointer-events: none; mix-blend-mode: screen; display: none; 
-        }
-        /* The Overlay now lets clicks pass through to the canvas for selection */
-        #start-overlay { 
-            position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
-            align-items: center; justify-content: flex-end; padding-bottom: 50px;
-            background: rgba(0,0,0,0.3); pointer-events: none; 
-        }
-        #start-button { 
-            pointer-events: auto; padding: 20px 60px; font-size: 24px; border-radius: 50px; 
-            border: none; background: #DAA520; color: #fff; font-weight: bold; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: pointer;
         }
     </style>
 </head>
@@ -35,8 +36,8 @@
         <canvas id="gameCanvas"></canvas>
         <img id="seasonal-gif" src="" alt="seasonal-effect">
         <div id="start-overlay">
-            <h1 style="color:white; font-size: 40px; margin-bottom: auto; padding-top: 40px; text-shadow: 2px 2px 10px black;">CAUGHT!</h1>
-            <button id="start-button">START GAME</button>
+            <h1 style="color:white; font-size: 45px; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.9);">CAUGHT!</h1>
+            <button id="start-button">PLAY NOW</button>
         </div>
     </div>
 
@@ -87,9 +88,9 @@ const worldOptions = [
     { id: 'evening', label: 'NIGHT' }
 ];
 
-// --- UTILS ---
+// --- CORE FUNCTIONS ---
 function createBurst(x, y) {
-    for(let i=0; i<12; i++) {
+    for(let i=0; i<10; i++) {
         particles.push({
             x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
             life: 1.0, size: Math.random()*3+2, color: '#FFD700'
@@ -97,20 +98,9 @@ function createBurst(x, y) {
     }
 }
 
-function updateMasterSync() {
-    let idx = Math.floor(starsCount / 20) % 3;
-    if (idx !== lastCycleIdx && gameState === 'PLAY') {
-        gifElement.src = timeGifs[idx]; gifElement.style.display = 'block'; lastCycleIdx = idx;
-    }
-    musicTracks.forEach((t, i) => {
-        if (gameState === 'PLAY' && i === idx) {
-            if (t.paused) t.play().catch(()=>{});
-            t.volume = Math.min(t.volume + 0.02, 0.4);
-        } else {
-            t.volume = Math.max(t.volume - 0.05, 0);
-            if (t.volume === 0 && !t.paused) { t.pause(); t.currentTime = 0; }
-        }
-    });
+function resetGame() {
+    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; particles = [];
+    score = 0; starsCount = 0; lastCycleIdx = -1; frames = 0;
 }
 
 function update(dt) {
@@ -118,7 +108,15 @@ function update(dt) {
     if (gameState !== 'PLAY') return;
 
     frames++;
-    updateMasterSync();
+    // Music Sync
+    let idx = Math.floor(starsCount / 20) % 3;
+    if (idx !== lastCycleIdx) {
+        gifElement.src = timeGifs[idx]; gifElement.style.display = 'block'; lastCycleIdx = idx;
+    }
+    musicTracks.forEach((t, i) => {
+        if (i === idx) t.volume = Math.min(t.volume + 0.02, 0.4);
+        else t.volume = Math.max(t.volume - 0.05, 0);
+    });
 
     let speed = (W * 0.012 + (score * 0.1)) * (activePower === 'SLOW' ? 0.5 : 1);
     bgX = (bgX - (speed * 0.15)) % W;
@@ -127,15 +125,17 @@ function update(dt) {
     if (powerTimer > 0) powerTimer--; else activePower = null;
     if (splashTimer > 0) splashTimer--;
 
+    // Spawning
     if (frames % 100 === 0) {
-        let gap = H * 0.32, h = Math.random() * (H - gap - 300) + 150, pX = W + 100;
-        catPaws.push({ x: pX, yT: h, yB: h + gap, passed: false });
-        stars.push({ x: pX + 75, y: h + gap/2, collected: false });
+        let gap = H * 0.32, h = Math.random() * (H - gap - 300) + 150;
+        catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
+        stars.push({ x: W + 175, y: h + gap/2, collected: false });
         if (starsCount > 0 && starsCount % 10 === 0 && powerUps.length === 0) {
             powerUps.push({ x: W + 500, y: Math.random()*(H-300)+150, type: ['SHIELD','MAGNET','SLOW'][Math.floor(Math.random()*3)] });
         }
     }
 
+    // Physics & Collisions
     catPaws.forEach(p => {
         p.x -= speed;
         if (catX + 30 > p.x && catX - 30 < p.x + 150) {
@@ -168,6 +168,7 @@ function update(dt) {
 function triggerGameOver() {
     gameState = 'GAMEOVER';
     musicTracks.forEach(t => { t.pause(); t.currentTime = 0; t.volume = 0; });
+    startOverlay.style.display = 'flex';
 }
 
 // --- DRAWING ---
@@ -181,25 +182,24 @@ function draw() {
         ctx.globalAlpha = 1;
     }
 
-    if (gameState === 'MAIN_MENU') {
-        ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#222"; ctx.textAlign="center"; ctx.font="bold 24px Arial";
-        ctx.fillText("TAP TO CHOOSE CAT", W/2, H*0.25);
+    if (gameState === 'MAIN_MENU' || gameState === 'GAMEOVER') {
+        ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = "#222"; ctx.textAlign="center"; ctx.font="bold 24px sans-serif";
+        ctx.fillText("CHOOSE YOUR CAT", W/2, H*0.22);
         
         charOptions.forEach((opt, i) => {
             let x = W/2 + (i-1)*100; opt.x = x;
-            ctx.save(); ctx.translate(x, H*0.38);
             if (selectedCatImg === opt.img) {
-                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 5; ctx.strokeRect(-45, -45, 90, 90);
+                ctx.strokeStyle = "#DAA520"; ctx.lineWidth = 5; ctx.strokeRect(x-45, H*0.35-45, 90, 90);
             }
-            ctx.drawImage(opt.img, -40, -40, 80, 80); ctx.restore();
+            ctx.drawImage(opt.img, x-40, H*0.35-40, 80, 80);
         });
 
-        ctx.fillText("TAP TO CHOOSE WORLD", W/2, H*0.58);
+        ctx.fillStyle = "#222"; ctx.fillText("SELECT WORLD", W/2, H*0.55);
         worldOptions.forEach((opt, i) => {
-            let y = H*0.68 + i*55; opt.y = y;
+            let y = H*0.65 + i*55; opt.y = y;
             ctx.fillStyle = selectedBG === opt.id ? "#DAA520" : "#999";
-            ctx.font = selectedBG === opt.id ? "bold 28px Arial" : "22px Arial";
+            ctx.font = selectedBG === opt.id ? "bold 28px sans-serif" : "22px sans-serif";
             ctx.fillText(opt.label, W/2, y);
         });
     }
@@ -225,19 +225,16 @@ function draw() {
         if (activePower) { ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
         ctx.rotate(rollAngle); ctx.drawImage(selectedCatImg, -45, -45, 90, 90); ctx.restore();
 
-        ctx.fillStyle = "#333"; ctx.font = "bold 24px Arial"; ctx.textAlign="left";
+        ctx.fillStyle = "#333"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="left";
         ctx.fillText(`Stars: ${starsCount}`, 25, 55);
-    }
-
-    if (gameState === 'GAMEOVER') {
-        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#fff"; ctx.textAlign="center"; ctx.font="bold 40px Arial"; ctx.fillText("CAUGHT!", W/2, H/2 - 20);
-        ctx.font="20px Arial"; ctx.fillText("TAP TO RE-SELECT", W/2, H/2 + 40);
+        ctx.textAlign="right"; ctx.font="bold 12px sans-serif"; ctx.fillText("POWER UP", W-25, 40);
+        ctx.fillStyle="#ddd"; ctx.fillRect(W-125, 48, 100, 10);
+        ctx.fillStyle="#DAA520"; ctx.fillRect(W-125, 48, (starsCount % 10)*10, 10);
     }
 
     if (splashTimer > 0) {
-        ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = "white"; ctx.fillStyle = "#333"; 
-        ctx.font = "bold 60px Arial"; ctx.textAlign="center"; ctx.fillText(splashText, W/2, H/2); ctx.restore();
+        ctx.fillStyle = "#333"; ctx.font = "bold 60px sans-serif"; ctx.textAlign="center";
+        ctx.fillText(splashText, W/2, H/2);
     }
 }
 
@@ -245,6 +242,7 @@ function loop(t) {
     update((t - lastTime)/1000); draw(); lastTime = t; requestAnimationFrame(loop);
 }
 
+// --- INPUTS ---
 function handleInput(e) {
     if (e.type === 'touchstart') e.preventDefault();
     const touch = e.touches ? e.touches[0] : e;
@@ -252,28 +250,37 @@ function handleInput(e) {
     const x = (touch.clientX - rect.left) * (W / rect.width);
     const y = (touch.clientY - rect.top) * (H / rect.height);
 
-    if (gameState === 'MAIN_MENU') {
-        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 50 && Math.abs(y - H*0.38) < 50) selectedCatImg = opt.img; });
+    if (gameState === 'MAIN_MENU' || gameState === 'GAMEOVER') {
+        charOptions.forEach(opt => { if (Math.abs(x - opt.x) < 50 && Math.abs(y - H*0.35) < 50) selectedCatImg = opt.img; });
         worldOptions.forEach(opt => { if (Math.abs(x - W/2) < 120 && Math.abs(y - opt.y) < 30) selectedBG = opt.id; });
     } else if (gameState === 'PLAY') {
         catV = -11.5;
-    } else if (gameState === 'GAMEOVER') {
-        gameState = 'MAIN_MENU'; startOverlay.style.display = 'flex';
     }
 }
 
-window.addEventListener('touchstart', handleInput, {passive: false});
-window.addEventListener('mousedown', handleInput);
+canvas.addEventListener('touchstart', handleInput, {passive: false});
+canvas.addEventListener('mousedown', handleInput);
+
+startButton.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startTheGame();
+}, {passive: false});
 
 startButton.addEventListener('click', (e) => {
     e.stopPropagation();
-    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
-    startOverlay.style.display = 'none';
-    catY = H/2; catV = 0; catPaws = []; stars = []; powerUps = []; particles = []; score = 0; starsCount = 0; lastCycleIdx = -1;
-    gameState = 'PLAY';
+    startTheGame();
 });
 
-// Start the drawing loop immediately to show the menu
+function startTheGame() {
+    // Mobile browsers need this to unlock audio
+    musicTracks.forEach(t => { t.play().then(()=>t.pause()); });
+    startOverlay.style.display = 'none';
+    resetGame();
+    gameState = 'PLAY';
+}
+
+// Start drawing immediately
 requestAnimationFrame(loop);
 </script>
 </body>

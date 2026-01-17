@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Custom Paw Dimensions</title>
+    <title>Caught! - Geometric Glowing Stars</title>
     <style>
-        :root { --gold: #DAA520; --bg-glass: rgba(255, 255, 255, 0.15); }
+        :root { --gold: #FFD700; --bg-glass: rgba(255, 255, 255, 0.15); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; overflow: hidden; touch-action: none; }
         #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
@@ -13,10 +13,10 @@
         .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); color: white; text-align: center; padding: 20px; }
         .char-grid { display: flex; gap: 10px; margin: 15px 0; }
         .char-card { width: 70px; height: 70px; border-radius: 12px; background: var(--bg-glass); border: 2px solid transparent; display: flex; align-items: center; justify-content: center; }
-        .char-card.selected { border-color: var(--gold); background: rgba(218, 165, 32, 0.3); }
+        .char-card.selected { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); }
         .char-card img { width: 50px; height: 50px; }
         .world-btn { width: 180px; padding: 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: var(--bg-glass); color: white; margin: 5px 0; cursor: pointer; }
-        .world-btn.selected { background: var(--gold); border-color: var(--gold); font-weight: bold; }
+        .world-btn.selected { background: var(--gold); border-color: #000; color: #000; font-weight: bold; }
         .action-btn { padding: 15px 50px; font-size: 20px; border-radius: 40px; border: none; background: #fff; color: #000; font-weight: bold; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
@@ -25,7 +25,7 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="menu-overlay" class="overlay">
-            <h1>CAUGHT!</h1>
+            <h1 style="color: var(--gold);">CAUGHT!</h1>
             <div class="char-grid">
                 <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
                 <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
@@ -46,12 +46,11 @@
     </div>
 
 <script>
-// --- GAME CONFIGURATION ---
 const GAME_CONFIG = {
-    pawWidth: 400,      // Customize visual width
-    pawHeight: 550,     // Customize visual height
-    hitboxWidth: 50,    // Deadly width (keep smaller than visualWidth)
-    gapHeight: 280,     // Vertical gap space
+    pawWidth: 120,
+    pawHeight: 750,
+    hitboxWidth: 50,
+    gapHeight: 280,
     gravity: 0.7,
     jumpStrength: -11
 };
@@ -62,18 +61,17 @@ const menuOverlay = document.getElementById('menu-overlay');
 const endOverlay = document.getElementById('end-overlay');
 const startBtn = document.getElementById('final-start-trigger');
 
-let W, H, bgX = 0;
+let W, H;
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; }
 window.addEventListener('resize', resize);
 resize();
 
 const assets = {
     day: new Image(), afternoon: new Image(), evening: new Image(),
-    paw: new Image(), fish: new Image(),
-    cats: [new Image(), new Image(), new Image()]
+    paw: new Image(), cats: [new Image(), new Image(), new Image()]
 };
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
-assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
+assets.paw.src = 'paw.png';
 assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
 
 const musicTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
@@ -117,6 +115,30 @@ function resetGame() {
 
 function stopAllMusic() { musicTracks.forEach(t => { t.pause(); t.currentTime = 0; }); }
 
+// Helper to draw star shapes
+function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+}
+
 function update(dt) {
     if (gameState !== 'PLAY') return;
     frames++;
@@ -129,23 +151,20 @@ function update(dt) {
     }
 
     let speed = (W * 0.012 + (score * 0.1));
-    bgX = (bgX - (speed * 0.15)) % W;
     rollAngle += 0.15;
 
     if (frames % 100 === 0) {
         let gap = GAME_CONFIG.gapHeight;
         let h = Math.random() * (H - gap - 200) + 100;
         catPaws.push({ x: W + 100, yT: h, yB: h + gap, passed: false });
-        stars.push({ x: W + 100 + (GAME_CONFIG.pawWidth / 2), y: h + gap/2, collected: false });
+        stars.push({ x: W + 100 + (GAME_CONFIG.pawWidth / 2), y: h + gap/2, collected: false, pulse: 0 });
     }
 
     catPaws.forEach(p => {
         p.x -= speed;
         let catR = 18;
-        
         let lethalLeft = p.x + (GAME_CONFIG.pawWidth / 2) - (GAME_CONFIG.hitboxWidth / 2);
         let lethalRight = p.x + (GAME_CONFIG.pawWidth / 2) + (GAME_CONFIG.hitboxWidth / 2);
-
         if (catX + catR > lethalLeft && catX - catR < lethalRight) {
             if (catY - catR < p.yT || catY + catR > p.yB) triggerGameOver();
         }
@@ -154,8 +173,9 @@ function update(dt) {
 
     stars.forEach(s => {
         s.x -= speed;
+        s.pulse += 0.08;
         let d = Math.sqrt((catX-s.x)**2 + (catY-s.y)**2);
-        if (!s.collected && d < 50) { s.collected = true; starsCount++; }
+        if (!s.collected && d < 55) { s.collected = true; starsCount++; }
     });
 
     catV += GAME_CONFIG.gravity;
@@ -172,31 +192,57 @@ function triggerGameOver() {
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
+
     if (assets[selectedBG].complete) {
-        ctx.globalAlpha = 0.4;
-        ctx.drawImage(assets[selectedBG], bgX, 0, W, H);
-        ctx.drawImage(assets[selectedBG], bgX + W, 0, W, H);
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(assets[selectedBG], 0, 0, W, H);
         ctx.globalAlpha = 1;
     }
 
     catPaws.forEach(p => {
         const vW = GAME_CONFIG.pawWidth;
         const vH = GAME_CONFIG.pawHeight;
-        // Top Paw
         ctx.save();
         ctx.translate(p.x + (vW / 2), p.yT);
         ctx.scale(1, -1);
         ctx.drawImage(assets.paw, -(vW / 2), 0, vW, vH);
         ctx.restore();
-        
-        // Bottom Paw
         ctx.drawImage(assets.paw, p.x, p.yB, vW, vH);
     });
 
+    // --- ENHANCED GEOMETRIC STARS ---
     stars.forEach(s => {
         if (s.collected) return;
-        ctx.fillStyle = "#FFD700";
-        ctx.beginPath(); ctx.arc(s.x, s.y, 15, 0, Math.PI*2); ctx.fill();
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.pulse);
+
+        // 1. Soft Background Glow (Outer Circle Aura)
+        let glowSize = 30 + Math.sin(s.pulse * 2) * 5;
+        let radialGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, glowSize);
+        radialGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+        radialGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        ctx.fillStyle = radialGrad;
+        ctx.beginPath(); ctx.arc(0, 0, glowSize, 0, Math.PI*2); ctx.fill();
+
+        // 2. The Geometric Star Core
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#FFD700";
+        
+        // Dynamic gold-to-white shimmer
+        let shimmer = (Math.sin(s.pulse * 4) + 1) / 2;
+        ctx.fillStyle = shimmer > 0.8 ? "#FFF" : "#FFD700"; 
+        
+        // Parameters: cx, cy, spikes, outerRadius, innerRadius
+        drawStar(0, 0, 5, 18, 8);
+        ctx.fill();
+
+        // 3. Inner Bright Highlight
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        drawStar(0, 0, 5, 8, 4);
+        ctx.fill();
+
+        ctx.restore();
     });
 
     ctx.save();
@@ -211,7 +257,12 @@ function draw() {
     }
 }
 
-function loop(t) { update((t - lastTime)/1000); draw(); lastTime = t; requestAnimationFrame(loop); }
+function loop(t) { 
+    update((t - lastTime)/1000); 
+    draw(); 
+    lastTime = t; 
+    requestAnimationFrame(loop); 
+}
 
 window.addEventListener('touchstart', (e) => { 
     if (gameState === 'PLAY') { e.preventDefault(); catV = GAME_CONFIG.jumpStrength; } 

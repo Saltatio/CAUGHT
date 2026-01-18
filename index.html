@@ -3,42 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CAUGHT! - Zen Glow Edition</title>
+    <title>CAUGHT! - Zen Glow Master Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; 
-            --light-glass: rgba(255, 255, 255, 0.3); --text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            --light-glass: rgba(255, 255, 255, 0.2); --text-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { margin: 0; background: #000; height: 100vh; font-family: 'Gaegu', cursive; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #0a0a0a; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #050505; overflow: hidden; }
         
-        /* 70% Transparency Background */
-        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; opacity: 0.7; transition: 0.8s ease; }
+        /* Fixed 70% Transparency Background */
+        #bg-layer { 
+            position: absolute; inset: 0; background-size: cover; background-position: center; 
+            z-index: 1; opacity: 0.7; transition: 1.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
         
         canvas { position: absolute; inset: 0; z-index: 5; display: block; width: 100%; height: 100%; }
         
-        #ui-layer { position: absolute; top: 20px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 60px; margin: 0; text-shadow: var(--text-shadow); }
+        #ui-layer { position: absolute; top: 40px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
+        .score-text { color: white; font-size: 80px; margin: 0; text-shadow: var(--text-shadow); letter-spacing: 4px; }
         
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: var(--light-glass); padding: 20px; text-align: center; }
-        h1 { color: white; font-size: 80px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
-        h2 { color: white; font-size: 52px; margin: 0; text-shadow: var(--text-shadow); }
+        .overlay { 
+            position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); background: var(--light-glass); padding: 20px; text-align: center;
+        }
         
-        .selection-label { color: white; font-size: 18px; text-transform: uppercase; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
-        .choice-btn { padding: 10px 20px; border: 2px solid rgba(255,255,255,0.7); background: rgba(255,255,255,0.2); color: white; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 18px; transition: 0.3s; }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.4); transform: scale(1.05); }
+        h1 { color: white; font-size: 90px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
+        h2 { color: white; font-size: 60px; margin: 0; text-shadow: var(--text-shadow); }
         
-        .cat-btn { width: 90px; height: 90px; border-radius: 50%; border: 3px solid transparent; transition: 0.3s; padding: 6px; background: rgba(255,255,255,0.3); }
-        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.5); }
+        .selection-box { margin: 15px 0; display: flex; flex-direction: column; align-items: center; }
+        .selection-label { color: rgba(255,255,255,0.9); font-size: 22px; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; }
+        
+        .choice-btn { 
+            padding: 12px 28px; border: 2px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.2); 
+            color: white; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 22px; transition: 0.4s; 
+        }
+        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: scale(1.05); box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+        
+        .cat-btn { width: 110px; height: 110px; border-radius: 50%; border: 3px solid transparent; transition: 0.4s; padding: 10px; background: rgba(255,255,255,0.1); }
+        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.4); transform: rotate(-5deg) scale(1.1); }
         .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
         
-        .action-btn { padding: 14px 45px; font-size: 26px; border-radius: 50px; border: none; font-family: inherit; cursor: pointer; background: white; color: #222; margin-top: 20px; transition: 0.3s; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); white-space: nowrap; }
-        .action-btn:hover { transform: scale(1.05); background: var(--accent); color: white; }
+        .action-btn { 
+            padding: 18px 60px; font-size: 32px; border-radius: 50px; border: none; font-family: inherit; 
+            cursor: pointer; background: white; color: #111; margin-top: 30px; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        .action-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
         
-        #hi-score-box { background: rgba(0,0,0,0.5); padding: 6px 24px; border-radius: 30px; color: var(--gold); font-size: 22px; margin-top: 15px; font-weight: 700; border: 1px solid rgba(255,215,0,0.3); }
+        #hi-score-box { 
+            background: rgba(0,0,0,0.7); padding: 10px 40px; border-radius: 40px; 
+            color: var(--gold); font-size: 26px; margin-top: 25px; font-weight: 700; 
+            border: 2px solid rgba(255,215,0,0.3); 
+        }
         
         #end-overlay { display: none; }
         #end-overlay.visible { display: flex; }
@@ -52,34 +73,45 @@
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
-            <p class="selection-label">Select Realm</p>
-            <div style="display:flex; gap:10px; margin-bottom: 20px;" id="world-select">
-                <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
-                <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
-                <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
+            <div class="selection-box">
+                <p class="selection-label">Select Realm</p>
+                <div style="display:flex; gap:15px;" id="world-select">
+                    <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
+                    <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
+                    <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
+                </div>
             </div>
-            <p class="selection-label">Select Companion</p>
-            <div style="display:flex; gap:15px;" id="cat-select">
-                <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
-                <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
-                <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
+            <div class="selection-box">
+                <p class="selection-label">Select Companion</p>
+                <div style="display:flex; gap:20px;" id="cat-select">
+                    <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
+                    <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
+                    <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
+                </div>
             </div>
-            <button class="action-btn" id="start-trigger">Start Session</button>
+            <button class="action-btn" id="start-trigger">Begin Session</button>
         </div>
 
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
-            <p style="color:white; font-size: 18px; font-style: italic; margin: 8px 0;">"Time spent with cats is never wasted."</p>
-            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1;">0</div>
-            <div id="hi-score-box">BEST: 0</div>
+            <div id="final-stats" style="font-size: 150px; color: white; line-height: 1; text-shadow: 0 0 40px rgba(255,255,255,0.3);">0</div>
+            <div id="hi-score-box">BEST SCORE: 0</div>
             <button class="action-btn" id="retry-trigger">More Bonding Time ❤️</button>
         </div>
     </div>
 
 <script>
+/** * GAME ENGINE CONFIG 
+ */
 const CONFIG = { 
-    gravity: 1050, jump: -380, startSpeed: 240, maxSpeed: 460, speedInc: 18,
-    minDur: 8, maxDur: 14, magnetRange: 380 
+    gravity: 1100, 
+    jump: -400, 
+    startSpeed: 250, 
+    maxSpeed: 520, 
+    speedInc: 15,
+    minDur: 8, 
+    maxDur: 15, 
+    magnetRange: 420 
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -87,27 +119,40 @@ const ctx = canvas.getContext('2d');
 const assets = { paw: new Image(), fish: new Image(), cat: new Image() };
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.png';
 
-const sfxMeow = new Audio('meow.mp3'); sfxMeow.volume = 0.15;
+// AUDIO SETUP
+const sfxMeow = new Audio('meow.mp3'); sfxMeow.volume = 0.2;
 const bgm = [new Audio('song1.mp3'), new Audio('song2.mp3'), new Audio('song3.mp3')];
 bgm.forEach(t => { t.loop = true; t.volume = 0.4; });
 
+/** * STATE VARIABLES 
+ */
 let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now();
-let catY, catV = 0, catX = 180, catRoll = 0, currentSongIdx = 0;
-let paws = [], stars = [], fishes = [], particles = [], lastPowerUps = [];
+let catY, catV = 0, catX = 200, catRoll = 0, currentSongIdx = 0;
+let paws = [], stars = [], fishes = [], particles = [], bursts = [], lastPowerUps = [];
 let activePower = null, pTimer = 0, fishQueued = false;
 
-function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
+function resize() { 
+    W = window.innerWidth; H = window.innerHeight; 
+    canvas.width = W; canvas.height = H; 
+    catY = H / 2; 
+}
 window.addEventListener('resize', resize); resize();
 
+/** * MENU ACTIONS 
+ */
 function setWorld(s, e) { 
     document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
-    e.classList.add('active'); document.getElementById('bg-layer').style.backgroundImage = `url(${s})`;
+    e.classList.add('active'); 
+    document.getElementById('bg-layer').style.backgroundImage = `url(${s})`;
 }
 function setCat(s, e) {
     document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active'));
-    e.classList.add('active'); assets.cat.src = s;
+    e.classList.add('active'); 
+    assets.cat.src = s;
 }
 
+/** * DRAWING UTILS 
+ */
 function drawStarShape(x, y, r, p, color, alpha = 1) {
     ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.translate(x, y); ctx.beginPath();
     for (let i = 0; i < p * 2; i++) {
@@ -116,151 +161,203 @@ function drawStarShape(x, y, r, p, color, alpha = 1) {
     } ctx.closePath(); ctx.fill(); ctx.restore();
 }
 
-function createShatter(x, y) {
-    for (let i = 0; i < 20; i++) {
-        particles.push({ x, y, vx: (Math.random()-0.5)*700, vy: (Math.random()-0.5)*700, life: 1.2, size: Math.random()*12+4, color: '#fff', type: 'shard' });
-    }
+function spawnBurst(x, y, color) {
+    bursts.push({ x, y, r: 80, a: 1, color: color || '#fff' });
 }
 
+/** * MAIN UPDATE (DELTA TIME PHYSICS)
+ */
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
+    // --- MUSIC FADE & CYCLE ---
     let track = bgm[currentSongIdx];
-    if (starsCount > 0 && starsCount % 30 >= 28) track.volume = Math.max(0, track.volume - dt * 0.3);
-    if (starsCount > 0 && starsCount % 30 === 0 && track.volume < 0.1) {
-        track.pause(); track.currentTime = 0; currentSongIdx = (currentSongIdx + 1) % bgm.length;
+    if (starsCount > 0 && starsCount % 30 >= 28) track.volume = Math.max(0, track.volume - dt * 0.4);
+    if (starsCount > 0 && starsCount % 30 === 0 && track.volume < 0.05) {
+        track.pause(); track.currentTime = 0;
+        currentSongIdx = (currentSongIdx + 1) % bgm.length;
         bgm[currentSongIdx].volume = 0.4; bgm[currentSongIdx].play();
     }
 
+    // --- SPEED & POWERUP CLOCK ---
     let speed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20) * CONFIG.speedInc), CONFIG.maxSpeed);
     if (activePower === 'SLOW') speed *= 0.6;
     if (pTimer > 0) { pTimer -= dt; if (pTimer <= 0) activePower = null; }
 
-    if (paws.length === 0 || (W - paws[paws.length-1].x) > 650) {
-        let h = Math.random() * (H - 400) + 120;
-        paws.push({ x: W + 150, yT: h, yB: h + 265, hit: false });
-        if (fishQueued) { fishes.push({ x: W + 400, y: h + 132, t: 0 }); fishQueued = false; }
-        else { stars.push({ x: W + 400, y: h + 132, type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rot: 0, rSpd: 0.8 }); }
+    // --- ENTITY SPAWNING ---
+    if (paws.length === 0 || (W - paws[paws.length-1].x) > 700) {
+        let h = Math.random() * (H - 500) + 150;
+        paws.push({ x: W + 150, yT: h, yB: h + 280, hit: false });
+        
+        if (fishQueued) {
+            fishes.push({ x: W + 450, y: h + 140, t: 0 });
+            fishQueued = false;
+        } else {
+            stars.push({ 
+                x: W + 450, y: h + 140, 
+                type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', 
+                rot: 0, 
+                rSpd: 1.0 // Initial leisurely rotation
+            });
+        }
     }
 
+    // --- COLLISIONS: PAWS ---
     paws.forEach(p => {
         p.x -= speed * dt;
-        if (!p.hit && catX+30 > p.x+185 && catX-30 < p.x+215 && (catY-30 < p.yT || catY+30 > p.yB)) {
-            if (activePower === 'SHIELD') { createShatter(catX, catY); p.hit = true; activePower = null; pTimer = 0; }
-            else { gameOver(); }
+        if (!p.hit && catX+40 > p.x+185 && catX-40 < p.x+215 && (catY-40 < p.yT || catY+40 > p.yB)) {
+            if (activePower === 'SHIELD') { 
+                spawnBurst(catX, catY, '#fff'); 
+                p.hit = true; activePower = null; pTimer = 0; 
+            } else { gameOver(); }
         }
     });
 
+    // --- COLLISIONS: STARS ---
     stars.forEach((s, i) => {
         s.x -= speed * dt;
-        s.rot += s.rSpd * dt * 2; // Leisurely rotation
+        s.rot += s.rSpd * dt * 3; // Normal leisurely spin
+        
         if (activePower === 'MAGNET') {
             let dx = catX - s.x, dy = catY - s.y, dist = Math.hypot(dx, dy);
             if (dist < CONFIG.magnetRange) { 
-                s.x += (dx/dist)*380*dt; s.y += (dy/dist)*380*dt; 
-                s.rot += dt * 10; // Faster rotation when pulled
+                s.x += (dx/dist)*500*dt; s.y += (dy/dist)*500*dt; 
+                s.rot += dt * 12; // Speed up rotation when pulled in
             } 
         }
-        if (Math.hypot(catX - s.x, catY - s.y) < 75) {
+        if (Math.hypot(catX - s.x, catY - s.y) < 85) {
             starsCount += (s.type === 'BLUE' ? 2 : 1);
             if (starsCount % 10 === 0) fishQueued = true;
             stars.splice(i, 1); updateUI();
         }
     });
 
+    // --- COLLISIONS: POWER-UPS ---
     fishes.forEach((f, i) => {
         f.x -= speed * dt; f.t += dt;
-        if (Math.hypot(catX - f.x, catY - (f.y + Math.sin(f.t*5)*15)) < 85) {
-            let pool = ['SHIELD', 'MAGNET'];
-            if (starsCount >= 25) pool.push('SLOW');
+        if (Math.hypot(catX - f.x, catY - (f.y + Math.sin(f.t*5)*20)) < 90) {
+            let pool = ['SHIELD', 'MAGNET', 'SLOW'];
             if (lastPowerUps.length >= 2 && lastPowerUps[0] === lastPowerUps[1]) pool = pool.filter(p => p !== lastPowerUps[0]);
+            
             activePower = pool[Math.floor(Math.random() * pool.length)];
             lastPowerUps.push(activePower);
             if (lastPowerUps.length > 2) lastPowerUps.shift();
-            pTimer = Math.min(CONFIG.minDur + Math.floor(starsCount/20)*2, CONFIG.maxDur);
+            
+            pTimer = Math.min(CONFIG.minDur + Math.floor(starsCount/25)*2, CONFIG.maxDur);
             fishes.splice(i, 1);
         }
     });
 
-    particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5; if(p.life <= 0) particles.splice(i, 1); });
+    // --- PARTICLES & BURSTS ---
+    bursts.forEach((b, i) => { b.r += 400 * dt; b.a -= 1.8 * dt; if(b.a <= 0) bursts.splice(i, 1); });
+    
+    // --- PLAYER PHYSICS ---
     catV += CONFIG.gravity * dt; catY += catV * dt;
     if (catY > H || catY < 0) gameOver();
-    catRoll += 2.5 * dt;
+    catRoll += 3.5 * dt;
 }
 
+/** * RENDER LOOP 
+ */
 function draw() {
     ctx.clearRect(0, 0, W, H);
     
-    // Draw Paws
+    // 1. Paws
     paws.forEach(p => {
-        ctx.save(); if(activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.4;
+        ctx.save(); 
+        if(activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.5;
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 800);
-        ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 800); ctx.restore();
+        ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); 
+        ctx.drawImage(assets.paw, -200, 0, 400, 800); 
+        ctx.restore();
     });
 
-    // Draw Stars with Glow
+    // 2. Stars (with Neon Glow)
     stars.forEach(s => {
         let col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
         ctx.save();
-        ctx.shadowBlur = 20; ctx.shadowColor = col;
+        ctx.shadowBlur = 25; ctx.shadowColor = col; // THE GLOW SHADER
         ctx.translate(s.x, s.y); ctx.rotate(s.rot);
-        drawStarShape(0, 0, 18, 5, col);
+        drawStarShape(0, 0, 22, 5, col);
         ctx.restore();
     });
 
-    // Draw Fish with Glow
+    // 3. Fish Power-ups
     fishes.forEach(f => {
         ctx.save();
-        ctx.shadowBlur = 25; ctx.shadowColor = "#FFB7B7";
-        ctx.drawImage(assets.fish, f.x-35, f.y-35 + Math.sin(f.t*5)*15, 70, 70);
+        ctx.shadowBlur = 35; ctx.shadowColor = "#FFB7B7";
+        ctx.drawImage(assets.fish, f.x-45, f.y-45 + Math.sin(f.t*5)*20, 90, 90);
         ctx.restore();
     });
 
-    // Draw Particles
-    particles.forEach(p => {
-        if (p.type === 'shard') { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = '#fff'; ctx.translate(p.x, p.y); ctx.rotate(p.life*10); ctx.beginPath(); ctx.moveTo(-p.size, 0); ctx.lineTo(0, p.size); ctx.lineTo(p.size, 0); ctx.fill(); ctx.restore(); }
-        else drawStarShape(p.x, p.y, p.size, 5, p.color, p.life);
+    // 4. Burst Rings
+    bursts.forEach(b => {
+        ctx.save(); ctx.strokeStyle = b.color; ctx.globalAlpha = b.a; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke(); ctx.restore();
     });
 
-    // Draw Cat & Faltering Bubble
+    // 5. Cat Companion & Faltering Aura
     ctx.save();
     if (activePower) {
         let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
-        let falter = (pTimer < 2.5 && Math.sin(Date.now() * 0.02) < 0) ? 0.1 : 0.3; // Faltering effect
+        
+        // Faltering Alpha Effect (Fast flickering when < 2.5s left)
+        let alpha = 0.35;
+        if (pTimer < 2.5) {
+            alpha = (Math.sin(Date.now() * 0.02) + 1) / 5; // Rapid sine flicker
+        }
+        
         ctx.save(); ctx.translate(catX, catY);
-        ctx.fillStyle = `rgba(${col}, ${falter})`;
-        ctx.beginPath(); ctx.arc(0, 0, 82, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = `rgba(${col}, ${falter * 3})`; ctx.lineWidth = 4; ctx.stroke();
+        ctx.fillStyle = `rgba(${col}, ${alpha})`;
+        ctx.beginPath(); ctx.arc(0, 0, 90, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = `rgba(${col}, ${alpha * 2})`; ctx.lineWidth = 5; ctx.stroke();
         ctx.restore();
     }
     ctx.translate(catX, catY); ctx.rotate(catRoll);
-    ctx.drawImage(assets.cat, -45, -45, 90, 90);
+    ctx.drawImage(assets.cat, -55, -55, 110, 110);
     ctx.restore();
 }
 
 function updateUI() { document.getElementById('star-display').innerText = starsCount; }
+
 function gameOver() {
     gameState = 'OVER'; bgm.forEach(t => { t.pause(); t.currentTime = 0; });
-    const best = parseInt(localStorage.getItem('caught_hiscore') || 0); if (starsCount > best) localStorage.setItem('caught_hiscore', starsCount);
-    document.getElementById('final-stats').innerText = starsCount; document.getElementById('hi-score-box').innerText = "BEST: " + Math.max(best, starsCount);
+    const best = parseInt(localStorage.getItem('caught_hiscore_best') || 0);
+    if (starsCount > best) localStorage.setItem('caught_hiscore_best', starsCount);
+    
+    document.getElementById('final-stats').innerText = starsCount;
+    document.getElementById('hi-score-box').innerText = "BEST SCORE: " + Math.max(best, starsCount);
     document.getElementById('end-overlay').classList.add('visible');
+    document.getElementById('ui-layer').style.display = 'none';
 }
 
+/** * EVENT TRIGGERS 
+ */
 document.getElementById('start-trigger').onclick = () => {
-    bgm[0].currentTime = 0; bgm[0].play().catch(() => {});
-    sfxMeow.play(); gameState = 'PLAY';
-    document.getElementById('menu-overlay').style.display = 'none'; document.getElementById('ui-layer').style.display = 'block';
+    bgm[0].play().catch(() => {});
+    sfxMeow.play(); 
+    gameState = 'PLAY';
+    document.getElementById('menu-overlay').style.display = 'none'; 
+    document.getElementById('ui-layer').style.display = 'block';
 };
+
 document.getElementById('retry-trigger').onclick = () => location.reload();
 
-window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
-window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
+window.addEventListener('mousedown', () => { if(gameState === 'PLAY') catV = CONFIG.jump; });
+window.addEventListener('touchstart', (e) => { 
+    if(gameState === 'PLAY') { e.preventDefault(); catV = CONFIG.jump; } 
+}, {passive:false});
 
+/** * START THE ENGINE 
+ */
 function loop(t) { 
     let dt = (t - lastTime) / 1000; lastTime = t; 
-    update(dt > 0.1 ? 0.016 : dt); draw(); 
+    update(dt > 0.1 ? 0.016 : dt); 
+    draw(); 
     requestAnimationFrame(loop); 
 }
+
+// Initial Background
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
 requestAnimationFrame(loop);
 </script>

@@ -7,10 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --gold: #FFD700; 
-            --blue: #00F2FF; 
-            --accent: #FF8A00; 
-            --dark: #1a1a1a;
+            --gold: #FFD700; --blue: #00F2FF; --accent: #FF8A00; --dark: #1a1a1a;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Fredoka One', cursive; overflow: hidden; touch-action: none; }
@@ -19,51 +16,49 @@
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
         #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background-image 0.8s ease; }
 
-        /* UI HUD */
+        /* HUD */
         #ui-layer { position: absolute; top: 30px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 60px; text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin-bottom: 5px; }
-        .progress-label { color: var(--gold); font-size: 12px; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-        .progress-wrapper { width: 160px; height: 14px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 0 auto; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .score-text { color: white; font-size: clamp(40px, 10vw, 60px); text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin: 0; }
+        .progress-wrapper { width: 160px; height: 14px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 10px auto; overflow: hidden; border: 3px solid white; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease; }
 
-        /* Responsive Overlays */
+        /* Overlays */
         .overlay { 
-            position: absolute; inset: 0; z-index: 20; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); 
-            transition: opacity 0.8s ease; 
-            padding: 20px; text-align: center;
+            position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            backdrop-filter: blur(12px); background: rgba(0,0,0,0.7); padding: 20px; text-align: center;
         }
         
-        /* Titles - Fluid Sizing */
-        .main-title { 
-            font-size: clamp(50px, 15vw, 85px); 
-            color: white; margin: 10px 0; 
-            text-shadow: 6px 6px 0 var(--accent); 
-            line-height: 1;
-            width: 100%;
-        }
-
-        .grid-label { color: white; font-size: 12px; margin: 15px 0 8px 0; letter-spacing: 1px; opacity: 0.8; }
-        .selection-grid { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; max-width: 90vw; }
+        .main-title { font-size: clamp(45px, 12vw, 80px); color: white; margin: 0 0 15px 0; text-shadow: 6px 6px 0 var(--accent); line-height: 1; }
+        .grid-label { color: white; font-size: 12px; margin: 15px 0 8px 0; letter-spacing: 1px; opacity: 0.9; text-transform: uppercase; }
+        .selection-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
         
-        .world-btn { padding: 10px 16px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 13px; transition: 0.2s; }
+        .world-btn { padding: 10px 16px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 13px; }
         .world-btn.selected { background: var(--accent); border-color: white; transform: scale(1.05); }
 
-        .cat-option { width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 4px solid white; border-radius: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .cat-option img { width: 45px; height: 45px; object-fit: contain; }
-        .cat-option.selected { background: var(--accent); border-color: white; transform: translateY(-5px); }
+        /* Cat Selection Styles */
+        .cat-option { 
+            width: 85px; height: 85px; background: rgba(255,255,255,0.1); 
+            border: 4px solid white; border-radius: 20px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; 
+        }
+        .cat-option img { width: 60px; height: 60px; object-fit: contain; }
+        
+        /* Slow Rotation on Hover */
+        .cat-option:hover img { animation: slowSpin 4s linear infinite; }
+        .cat-option.selected { background: var(--accent); border-color: white; transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 138, 0, 0.6); }
 
-        /* End Screen Fixes */
-        #end-overlay { display: none; opacity: 0; pointer-events: none; }
-        #end-overlay.active { display: flex; opacity: 1; pointer-events: all; }
-        .end-title { font-size: clamp(60px, 18vw, 95px); color: white; margin: 0; text-shadow: 0 10px 20px rgba(0,0,0,0.5); letter-spacing: -2px; }
-        .final-stars { font-size: clamp(80px, 25vw, 140px); margin: 10px 0; color: white; text-shadow: 0 8px 30px rgba(0,0,0,0.6); line-height: 0.9; }
+        @keyframes slowSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
-        .action-btn { padding: 18px 60px; font-size: 28px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; transition: 0.1s; margin-top: 20px; }
+        .action-btn { padding: 18px 60px; font-size: 28px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; margin-top: 20px; }
         .action-btn:active { transform: translateY(5px); box-shadow: 0 3px 0px #b36100; }
 
-        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.5s; text-transform: uppercase; text-align: center; width: 100%; }
+        #end-overlay { display: none; }
+        .final-stars { font-size: clamp(70px, 20vw, 120px); color: white; margin: 5px 0; }
+        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.4s; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -72,7 +67,6 @@
         <div id="bg-layer"></div>
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
-            <div class="progress-label">POWER-UP INCOMING</div>
             <div class="progress-wrapper"><div id="progress-fill"></div></div>
         </div>
         <p id="splash-text"></p>
@@ -81,37 +75,32 @@
         <div id="menu-overlay" class="overlay">
             <h1 class="main-title">CAUGHT!</h1>
             
-            <div class="grid-label">CHOOSE YOUR VIBE</div>
+            <p class="grid-label">Choose World</p>
             <div class="selection-grid">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">DUSK</button>
             </div>
 
-            <div class="grid-label">CHOOSE YOUR CAT</div>
+            <p class="grid-label">Choose Cat</p>
             <div class="selection-grid">
-                <div class="cat-option selected" onclick="selectCat('cat.png', this)"><img src="cat.png" alt="Cat 1"></div>
-                <div class="cat-option" onclick="selectCat('cat2.png', this)"><img src="cat2.png" alt="Cat 2"></div>
-                <div class="cat-option" onclick="selectCat('cat3.png', this)"><img src="cat3.png" alt="Cat 3"></div>
+                <div class="cat-option selected" onclick="selectCat('cat.png', this)"><img src="cat.png"></div>
+                <div class="cat-option" onclick="selectCat('cat_black.png', this)"><img src="cat_black.png"></div>
+                <div class="cat-option" onclick="selectCat('cat_tabby.png', this)"><img src="cat_tabby.png"></div>
             </div>
 
             <button class="action-btn" id="start-trigger">START</button>
         </div>
 
         <div id="end-overlay" class="overlay">
-            <h1 class="end-title">CAUGHT!</h1>
+            <h1 class="main-title" style="font-size: 50px;">SCORE</h1>
             <div id="final-stats" class="final-stars">0</div>
-            <p style="color: white; opacity: 0.8; margin-bottom: 10px;">STARS COLLECTED</p>
             <button class="action-btn" onclick="resetToMenu()">RETRY</button>
         </div>
     </div>
 
 <script>
-const CONFIG = { 
-    gravity: 0.46, jump: -8.3, maxVol: 0.5, 
-    minSpacing: 480, magnetRange: 420 
-};
-
+const CONFIG = { gravity: 0.46, jump: -8.3, maxVol: 0.5, minSpacing: 480, magnetRange: 420 };
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const bgLayer = document.getElementById('bg-layer');
@@ -127,7 +116,6 @@ let tracks = [], currentTrackIdx = 0;
 const trackFiles = ['spring.mp3', 'summer.mp3', 'autumn.mp3'];
 
 function initAudio() { 
-    tracks.forEach(t => { t.pause(); t.src = ''; });
     tracks = trackFiles.map(file => { 
         let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; 
     }); 
@@ -137,12 +125,7 @@ let W, H, gameState = 'MENU', starsCount = 0, consecutiveStars = 0, frames = 0, 
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let activePower = null, pTimer = 0;
 
-function resize() { 
-    W = window.innerWidth; H = window.innerHeight; 
-    canvas.width = W; canvas.height = H; 
-    catY = H/2; 
-    catX = Math.min(W * 0.25, 160); // Adjust cat position for very small screens
-}
+function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H / 2; }
 window.addEventListener('resize', resize); resize();
 
 window.selectWorld = (id, el) => {
@@ -162,174 +145,136 @@ function update() {
     frames++;
     if (pTimer > 0) { pTimer--; if(pTimer <= 0) activePower = null; }
 
-    let baseSpeed = (W * 0.005 + (starsCount * 0.008));
-    let worldSpeed = (activePower === 'SLOW') ? baseSpeed * 0.5 : baseSpeed;
+    let worldSpeed = (W * 0.005 + (starsCount * 0.008));
+    if (activePower === 'SLOW') worldSpeed *= 0.5;
 
+    // Obstacles
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacing) {
-        let currentGap = Math.floor(Math.random() * 70) + 190; 
-        let h = Math.random() * (H - (currentGap + 200)) + 100; 
-        paws.push({ x: W + 100, yT: h, yB: h + currentGap });
-
-        if (fishPending) { 
-            fishes.push({ x: W + 330, y: h + currentGap/2, collected: false, spawnFrame: frames }); 
-            fishPending = false; 
+        let gap = Math.floor(Math.random() * 70) + 195;
+        let h = Math.random() * (H - (gap + 200)) + 100;
+        paws.push({ x: W + 100, yT: h, yB: h + gap });
+        if (fishPending) {
+            fishes.push({ x: W + 330, y: h + gap/2, collected: false, spawnFrame: frames });
+            fishPending = false;
         } else {
-            let isBlue = (consecutiveStars >= 10 && Math.random() < 0.2);
-            stars.push({ x: W + 330, y: h + currentGap/2, collected: false, type: isBlue ? 'blue' : 'gold' });
+            stars.push({ x: W + 330, y: h + gap/2, collected: false, type: (consecutiveStars >= 10 && Math.random() < 0.2) ? 'blue' : 'gold' });
         }
     }
 
-    paws.forEach((p, i) => { 
+    paws.forEach((p) => {
         p.x -= worldSpeed;
         if (catX+22 > p.x+155 && catX-22 < p.x+245 && (catY-22 < p.yT || catY+22 > p.yB)) {
-            if (activePower === 'SHIELD') {
-                activePower = null; pTimer = 0;
-                createBurst(catX, catY, "white", 20);
-                showSplash("POOF!");
-            } else { gameOver(); }
+            if (activePower === 'SHIELD') { activePower = null; pTimer = 0; createBurst(catX, catY, "#FFF", 20); showSplash("POOF!"); }
+            else { gameOver(); }
         }
-        if (p.x < -450) paws.splice(i, 1);
     });
+    paws = paws.filter(p => p.x > -450);
 
-    stars.forEach((s, i) => {
+    // Collectibles
+    stars.forEach((s) => {
         s.x -= worldSpeed;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
         if (activePower === 'MAGNET' && !s.collected && dist < CONFIG.magnetRange) {
-            let force = (1 - dist / CONFIG.magnetRange) * 18;
-            s.x += (dx / dist) * force; s.y += (dy / dist) * force;
+            s.x += (dx/dist)*18; s.y += (dy/dist)*18;
         }
-        if (!s.collected && dist < 60) {
+        if (!s.collected && dist < 65) {
             s.collected = true;
-            let gain = (s.type === 'blue' ? 2 : 1);
-            starsCount += gain; consecutiveStars += gain;
-            if (consecutiveStars > 0 && consecutiveStars % 5 === 0) showSplash(consecutiveStars + " STREAK!");
+            let val = s.type === 'blue' ? 2 : 1;
+            starsCount += val; consecutiveStars += val;
+            if (consecutiveStars % 5 === 0) showSplash(consecutiveStars + " STREAK!");
+            createBurst(s.x, s.y, s.type === 'blue' ? '#00F2FF' : '#FFD700', 12);
             updateUI();
-            handleMusicProgression();
-            createBurst(s.x, s.y, s.type === 'blue' ? '#00F2FF' : 'gold', 10);
-            if (starsCount % 10 === 0 && starsCount > 0) fishPending = true;
-            stars.splice(i, 1);
+            if (starsCount % 10 === 0) fishPending = true;
+            handleMusic();
         }
-        if (s.x < -50) { if (!s.collected) consecutiveStars = 0; stars.splice(i, 1); }
     });
+    stars = stars.filter(s => s.x > -50 && !s.collected);
 
-    fishes.forEach((f, i) => {
-        f.x -= worldSpeed; f.bob = Math.sin((frames - f.spawnFrame) * 0.1) * 15;
+    fishes.forEach((f) => {
+        f.x -= worldSpeed; f.bob = Math.sin((frames - f.spawnFrame)*0.1)*15;
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-(f.y+f.bob))**2) < 70) {
-            f.collected = true; triggerPowerUp(); fishes.splice(i, 1);
+            f.collected = true; triggerPower();
         }
-        if (f.x < -50) fishes.splice(i, 1);
     });
+    fishes = fishes.filter(f => f.x > -50 && !f.collected);
 
-    particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; if(p.life <= 0) particles.splice(i, 1); });
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; });
+    particles = particles.filter(p => p.life > 0);
+
     catV += CONFIG.gravity; catY += catV;
     if (catY > H || catY < 0) gameOver();
     roll += (activePower ? 0.08 : 0.04);
 }
 
-function updateUI() {
-    document.getElementById('star-display').innerText = starsCount;
-    let progress = (starsCount % 10) / 10 * 100;
-    if (starsCount > 0 && starsCount % 10 === 0) progress = 100;
-    document.getElementById('progress-fill').style.width = progress + "%";
-}
-
-function triggerPowerUp() {
-    let opts = ['SHIELD', 'MAGNET', 'SLOW'];
-    activePower = opts[Math.floor(Math.random()*opts.length)];
-    pTimer = 600; showSplash(activePower);
-}
-
-function handleMusicProgression() {
-    let cycle = starsCount % 30;
-    if (cycle === 28) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.2;
-    if (starsCount > 0 && cycle === 0) {
-        tracks[currentTrackIdx].pause();
-        currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
-        tracks[currentTrackIdx].volume = CONFIG.maxVol;
-        tracks[currentTrackIdx].play().catch(() => {});
-    }
-}
-
 function draw() {
     ctx.clearRect(0,0,W,H);
+
+    // Layer 1: Paws
     paws.forEach(p => {
-        ctx.save();
-        if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
-        ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
+        ctx.save(); if(activePower==='SHIELD') ctx.globalAlpha=0.4;
+        ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
         ctx.restore();
-        ctx.save();
-        if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
+        ctx.save(); if(activePower==='SHIELD') ctx.globalAlpha=0.4;
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
         ctx.restore();
     });
 
+    // Layer 2: Stars/Fish
     stars.forEach(s => {
-        ctx.save(); ctx.translate(s.x, s.y);
-        ctx.fillStyle = (s.type === 'blue' ? "#00F2FF" : "gold");
-        drawStar(0, 0, 5, 22, 11); ctx.restore();
+        ctx.save(); ctx.fillStyle = s.type === 'blue' ? "#00F2FF" : "#FFD700";
+        ctx.translate(s.x, s.y); ctx.beginPath();
+        for(let i=0; i<10; i++){ let r = i%2===0?22:11; let a = (i*Math.PI*2/10) - Math.PI/2; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+        ctx.closePath(); ctx.fill(); ctx.restore();
     });
-
     fishes.forEach(f => ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80));
-    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.s, p.s); });
 
-    ctx.save(); 
-    ctx.translate(catX, catY); 
-    ctx.rotate(roll); 
+    // Layer 3: Particles
+    particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.s, p.s); ctx.restore(); });
+
+    // Layer 4: The Cat (Always on Top)
+    ctx.save();
+    ctx.translate(catX, catY); ctx.rotate(roll);
     if (activePower) {
-        ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2);
+        ctx.beginPath(); ctx.arc(0,0,75,0,Math.PI*2);
         ctx.strokeStyle = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
-        ctx.lineWidth = 6; ctx.stroke();
+        ctx.lineWidth=6; ctx.stroke();
     }
-    ctx.drawImage(assets.cat, -45, -45, 90, 90); 
+    ctx.drawImage(assets.cat, -45, -45, 90, 90);
     ctx.restore();
 }
 
-function createBurst(x, y, color, count) {
-    for(let i=0; i<count; i++) particles.push({ x, y, vx:(Math.random()-0.5)*15, vy:(Math.random()-0.5)*15, life:1, s:Math.random()*8, color });
-}
+function triggerPower() { activePower = ['SHIELD', 'MAGNET', 'SLOW'][Math.floor(Math.random()*3)]; pTimer = 600; showSplash(activePower); }
 
-function drawStar(cx, cy, spikes, rOuter, rInner) {
-    let rot = Math.PI / 2 * 3, step = Math.PI / spikes;
-    ctx.beginPath(); ctx.moveTo(cx, cy - rOuter);
-    for (let i = 0; i < spikes; i++) {
-        ctx.lineTo(cx + Math.cos(rot) * rOuter, cy + Math.sin(rot) * rOuter); rot += step;
-        ctx.lineTo(cx + Math.cos(rot) * rInner, cy + Math.sin(rot) * rInner); rot += step;
+function handleMusic() {
+    if (starsCount > 0 && starsCount % 30 === 0) {
+        tracks[currentTrackIdx].pause();
+        currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
+        tracks[currentTrackIdx].play().catch(()=>{});
     }
-    ctx.closePath(); ctx.fill();
 }
 
-function showSplash(txt) {
-    const s = document.getElementById('splash-text');
-    s.innerText = txt.toUpperCase(); s.style.opacity = 1;
-    setTimeout(() => s.style.opacity = 0, 1200);
+function createBurst(x,y,c,n) { for(let i=0; i<n; i++) particles.push({x,y,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,life:1,s:Math.random()*8,color:c}); }
+
+function updateUI() {
+    document.getElementById('star-display').innerText = starsCount;
+    document.getElementById('progress-fill').style.width = (starsCount % 10)*10 + "%";
 }
 
-function gameOver() {
-    gameState = 'OVER';
-    tracks.forEach(t => t.pause());
-    document.getElementById('final-stats').innerText = starsCount;
-    document.getElementById('ui-layer').style.display = 'none';
-    const end = document.getElementById('end-overlay');
-    end.style.display = 'flex';
-    setTimeout(() => end.classList.add('active'), 100);
-}
+function showSplash(t) { let s = document.getElementById('splash-text'); s.innerText = t; s.style.opacity = 1; setTimeout(()=>s.style.opacity=0, 1000); }
+
+function gameOver() { gameState = 'OVER'; tracks.forEach(t=>t.pause()); document.getElementById('final-stats').innerText = starsCount; document.getElementById('end-overlay').style.display = 'flex'; }
 
 function resetToMenu() { location.reload(); }
 
-document.getElementById('start-trigger').onclick = () => { 
-    initAudio(); gameState = 'PLAY'; 
-    document.getElementById('menu-overlay').style.display = 'none'; 
-    document.getElementById('ui-layer').style.display = 'block'; 
-    tracks[currentTrackIdx].play().catch(() => {});
+document.getElementById('start-trigger').onclick = () => {
+    initAudio(); gameState = 'PLAY';
+    document.getElementById('menu-overlay').style.display = 'none';
+    document.getElementById('ui-layer').style.display = 'block';
+    tracks[currentTrackIdx].play().catch(()=>{});
 };
 
-window.addEventListener('touchstart', (e) => { 
-    if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; }
-}, {passive:false});
-
-window.addEventListener('mousedown', () => {
-    if(gameState==='PLAY') { catV = CONFIG.jump; }
-});
+window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
+window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 
 bgLayer.style.backgroundImage = `url('${assets.day.src}')`;
 function loop() { update(); draw(); requestAnimationFrame(loop); }

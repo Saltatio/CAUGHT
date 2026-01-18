@@ -24,6 +24,14 @@
         .progress-wrapper { width: 160px; height: 12px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 10px auto; overflow: hidden; border: 2px solid white; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease; }
 
+        /* Centralised Word Announcement */
+        #splash-text { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            color: white; font-size: 32px; text-shadow: 3px 3px 0 rgba(0,0,0,0.5); 
+            pointer-events: none; z-index: 30; opacity: 0; transition: opacity 0.3s; 
+            text-transform: uppercase; text-align: center; width: 100%;
+        }
+
         /* Overlays */
         .overlay { 
             position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -39,19 +47,15 @@
 
         .cat-option { width: 85px; height: 85px; background: rgba(255,255,255,0.1); border: 3px solid white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .cat-option img { width: 60px; height: 60px; object-fit: contain; }
-        .cat-option:hover img { animation: slowSpin 4s linear infinite; }
         .cat-option.selected { background: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
 
-        @keyframes slowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        /* End Game Styling */
+        /* Smaller End Game Font */
         .final-stars { font-size: 70px; color: var(--gold); text-shadow: 0 0 15px rgba(255,215,0,0.3); margin: 5px 0; line-height: 1; }
         .end-quote { color: white; font-size: 18px; opacity: 0.85; margin: 12px 0; font-style: italic; max-width: 320px; line-height: 1.4; }
         .action-btn { padding: 14px 40px; font-size: 22px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 6px 0px #b36100; margin-top: 15px; transition: 0.1s; }
         .action-btn:active { transform: translateY(3px); box-shadow: 0 3px 0px #b36100; }
 
         #end-overlay { display: none; }
-        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 40px; text-shadow: 4px 4px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.4s; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -109,11 +113,15 @@ assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.
 let tracks = [], currentTrackIdx = 0;
 const trackFiles = ['spring.mp3', 'summer.mp3', 'autumn.mp3'];
 
-function initAudio() { tracks = trackFiles.map(file => { let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; }); }
+function initAudio() { 
+    tracks = trackFiles.map(file => { 
+        let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; 
+    }); 
+}
 
 let W, H, gameState = 'MENU', starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
-let activePower = null, pTimer = 0;
+let activePower = null, pTimer = 0, consecutiveStreak = 0;
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H / 2; }
 window.addEventListener('resize', resize); resize();
@@ -130,11 +138,9 @@ window.selectCat = (src, el) => {
     assets.cat.src = src;
 };
 
-// Logic for Dynamic Power-Up Duration
 function getCurrentDuration() {
     let extraSeconds = Math.floor(starsCount / 20) * 2;
-    let totalSeconds = Math.min(CONFIG.baseDuration + extraSeconds, CONFIG.maxDuration);
-    return totalSeconds * 60; // Returns frames at 60fps
+    return Math.min(CONFIG.baseDuration + extraSeconds, CONFIG.maxDuration) * 60; 
 }
 
 function update() {
@@ -145,30 +151,47 @@ function update() {
     let worldSpeed = (W * 0.005 + (starsCount * 0.008));
     if (activePower === 'SLOW') worldSpeed *= 0.5;
 
+    // AUDIO FADING TRANSITION
+    let milestone = (currentTrackIdx + 1) * 30;
+    if (starsCount >= milestone - 2 && starsCount < milestone) {
+        let currentTrack = tracks[currentTrackIdx];
+        if (currentTrack.volume > 0.02) currentTrack.volume -= 0.005; // Fade out
+    }
+    if (starsCount >= milestone) {
+        tracks[currentTrackIdx].pause();
+        tracks[currentTrackIdx].volume = CONFIG.maxVol;
+        currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
+        tracks[currentTrackIdx].play().catch(()=>{});
+        showSplash("New Track Unlocked!");
+    }
+
+    // Spawn Logic
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacing) {
         let gap = Math.floor(Math.random() * 70) + 200;
         let h = Math.random() * (H - (gap + 200)) + 100;
         paws.push({ x: W + 100, yT: h, yB: h + gap, hit: false });
-        if (fishPending) { fishes.push({ x: W + 330, y: h + gap/2, collected: false, spawnFrame: frames }); fishPending = false; } 
-        else { stars.push({ x: W + 330, y: h + gap/2, collected: false, type: (Math.random() < 0.15) ? 'blue' : 'gold', angle: 0 }); }
+        
+        if (fishPending) { 
+            fishes.push({ x: W + 330, y: h + gap/2, collected: false, spawnFrame: frames }); 
+            fishPending = false; 
+        } else {
+            // Blue Star Spawn: Only if streak is 10+
+            let isBlue = (consecutiveStreak >= 10 && Math.random() < 0.35);
+            stars.push({ x: W + 330, y: h + gap/2, collected: false, type: isBlue ? 'blue' : 'gold', angle: 0 });
+        }
     }
 
-    // Shield Mechanics: Break bubble but keep game going
     paws.forEach((p) => {
         p.x -= worldSpeed;
         if (!p.hit && catX+22 > p.x+155 && catX-22 < p.x+245 && (catY-22 < p.yT || catY+22 > p.yB)) {
             if (activePower === 'SHIELD') { 
-                p.hit = true; 
-                activePower = null; 
-                pTimer = 0; 
-                createBurst(catX, catY, "#FFF", 30); 
-                showSplash("SHIELD SHATTERED!");
+                p.hit = true; activePower = null; pTimer = 0; 
+                createBurst(catX, catY, "#FFF", 30); showSplash("SHIELD SHATTERED!");
             } else { gameOver(); }
         }
     });
     paws = paws.filter(p => p.x > -450);
 
-    // Glowing & Rotating Stars
     stars.forEach((s) => {
         s.x -= worldSpeed; s.angle += 0.04;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
@@ -177,11 +200,19 @@ function update() {
         }
         if (!s.collected && dist < 65) {
             s.collected = true;
-            starsCount += (s.type === 'blue' ? 2 : 1);
+            let val = s.type === 'blue' ? 2 : 1;
+            starsCount += val;
+            consecutiveStreak++;
+            if(consecutiveStreak === 10) showSplash("Streak! Blue Stars Enabled");
             createBurst(s.x, s.y, s.type === 'blue' ? '#00F2FF' : '#FFD700', 12);
             updateUI();
             if (starsCount % 10 === 0) fishPending = true;
-            handleMusic();
+        }
+        // Streak Reset Logic
+        if (!s.collected && s.x < catX - 100) {
+            if (consecutiveStreak >= 10) showSplash("Streak Lost!");
+            consecutiveStreak = 0;
+            s.x = -1000; 
         }
     });
     stars = stars.filter(s => s.x > -50 && !s.collected);
@@ -204,6 +235,10 @@ function update() {
 
 function draw() {
     ctx.clearRect(0,0,W,H);
+    
+    // Draw Paws (Faded when Shield is Active)
+    ctx.save();
+    if (activePower === 'SHIELD') ctx.globalAlpha = 0.35;
     paws.forEach(p => {
         ctx.save();
         ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
@@ -212,6 +247,7 @@ function draw() {
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
         ctx.restore();
     });
+    ctx.restore();
 
     stars.forEach(s => {
         ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
@@ -227,29 +263,20 @@ function draw() {
     fishes.forEach(f => ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80));
     particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.s, p.s); ctx.restore(); });
 
-    // DRAW CAT & GLOWING/FLICKERING POWER BUBBLE
+    // DRAW CAT & GLOWING BUBBLE
     ctx.save();
     ctx.translate(catX, catY); ctx.rotate(roll);
-    
     if (activePower) {
         let pColor = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
-        
-        // Flicker Logic: When timer < 2s (120 frames), toggle visibility
         let isVisible = true;
-        if (pTimer < 120 && Math.floor(frames / 6) % 2 === 0) isVisible = false;
-
+        if (pTimer < 120 && Math.floor(frames / 6) % 2 === 0) isVisible = false; // Expiring Flicker
         if (isVisible) {
-            ctx.beginPath();
-            ctx.arc(0,0,75,0,Math.PI*2);
-            ctx.shadowColor = pColor;
-            ctx.shadowBlur = 20;
-            ctx.strokeStyle = pColor;
-            ctx.lineWidth = 8;
-            ctx.stroke();
-            ctx.shadowBlur = 0; // Reset shadow for cat
+            ctx.beginPath(); ctx.arc(0,0,75,0,Math.PI*2);
+            ctx.shadowColor = pColor; ctx.shadowBlur = 20;
+            ctx.strokeStyle = pColor; ctx.lineWidth = 8; ctx.stroke();
+            ctx.shadowBlur = 0;
         }
     }
-    
     ctx.drawImage(assets.cat, -45, -45, 90, 90);
     ctx.restore();
 }
@@ -260,14 +287,6 @@ function triggerPower() {
     showSplash(activePower); 
 }
 
-function handleMusic() {
-    if (starsCount > 0 && starsCount % 30 === 0) {
-        tracks[currentTrackIdx].pause();
-        currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
-        tracks[currentTrackIdx].play().catch(()=>{});
-    }
-}
-
 function createBurst(x,y,c,n) { for(let i=0; i<n; i++) particles.push({x,y,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,life:1,s:Math.random()*8,color:c}); }
 
 function updateUI() {
@@ -275,7 +294,11 @@ function updateUI() {
     document.getElementById('progress-fill').style.width = (starsCount % 10)*10 + "%";
 }
 
-function showSplash(t) { let s = document.getElementById('splash-text'); s.innerText = t; s.style.opacity = 1; setTimeout(()=>s.style.opacity=0, 1000); }
+function showSplash(t) { 
+    let s = document.getElementById('splash-text'); 
+    s.innerText = t; s.style.opacity = 1; 
+    setTimeout(()=>s.style.opacity=0, 1500); 
+}
 
 function gameOver() { gameState = 'OVER'; tracks.forEach(t=>t.pause()); document.getElementById('final-stats').innerText = starsCount; document.getElementById('end-overlay').style.display = 'flex'; }
 

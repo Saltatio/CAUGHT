@@ -6,9 +6,7 @@
     <title>CAUGHT!</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; --dark-glass: rgba(20, 18, 24, 0.95);
-        }
+        :root { --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; --dark-glass: rgba(20, 18, 24, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         
         body { 
@@ -42,11 +40,11 @@
         .world-btn.selected { background: white; color: #1c1921; }
 
         .cat-option { width: 85px; height: 85px; background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .cat-option img { width: 55px; height: 55px; opacity: 0.4; transition: 0.3s; }
+        .cat-option img { width: 55px; height: 55px; opacity: 0.4; }
         .cat-option.selected { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: scale(1.1); }
         .cat-option.selected img { opacity: 1; }
 
-        .action-btn { padding: 15px 40px; font-size: 26px; border-radius: 40px; border: none; font-family: inherit; font-weight: 700; cursor: pointer; background: white; color: #1c1921; margin-top: 30px; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.3); white-space: nowrap; }
+        .action-btn { padding: 15px 40px; font-size: 26px; border-radius: 40px; border: none; font-family: inherit; font-weight: 700; cursor: pointer; background: white; color: #1c1921; margin-top: 30px; transition: 0.3s; }
         .action-btn:hover { transform: translateY(-4px); background: var(--accent); color: white; }
 
         #end-overlay { display: none; opacity: 0; visibility: hidden; }
@@ -90,25 +88,32 @@
     </div>
 
 <script>
-// Logic: 10% Slower than original configs
+/**
+ * CAUGHT! Game Configuration
+ * Speeds reduced by 5% from previous version for better feel.
+ */
 const CONFIG = { 
-    gravity: 1080, jump: -410, baseSpeed: 270, maxVol: 0.4, minSpacingBase: 500, magnetRange: 400,
-    baseDuration: 8, gapMin: 180, gapMax: 260 
+    gravity: 1026, jump: -390, baseSpeed: 256, maxVol: 0.4, meowVol: 0.3,
+    minSpacingBase: 500, magnetRange: 400, baseDur: 8, maxDur: 14, gapMin: 180, gapMax: 260 
 };
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const bgLayer = document.getElementById('bg-layer');
 const assets = { day: new Image(), afternoon: new Image(), evening: new Image(), paw: new Image(), fish: new Image(), cat: new Image() };
+
+// Asset Sources
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.png';
 
 const meowSFX = new Audio('Meow.mp3'); 
+meowSFX.volume = CONFIG.meowVol;
+
 let tracks = [];
 const trackFiles = ['spring.mp3', 'summer.mp3', 'autumn.mp3'];
-
 function initAudio() { tracks = trackFiles.map(file => { let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; }); }
 
+// Game State Variables
 let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now(), fishPending = false;
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let activePower = null, pTimer = 0, consecutiveStreak = 0;
@@ -116,6 +121,7 @@ let activePower = null, pTimer = 0, consecutiveStreak = 0;
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H / 2; }
 window.addEventListener('resize', resize); resize();
 
+// Load Highscore
 const highscore = localStorage.getItem('caught_highscore') || 0;
 if (highscore > 0) {
     const tag = document.getElementById('best-score-tag');
@@ -123,6 +129,7 @@ if (highscore > 0) {
     tag.style.display = 'inline-block';
 }
 
+// UI Handlers
 window.selectWorld = (id, el) => {
     document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
@@ -135,53 +142,68 @@ window.selectCat = (src, el) => {
     assets.cat.src = src;
 };
 
-function createBurst(x, y, color) {
-    for (let i = 0; i < 10; i++) {
+// Particle Effects
+function createBurst(x, y, color, count = 10, sizeMax = 5, speed = 450) {
+    for (let i = 0; i < count; i++) {
         particles.push({
             x, y, color,
-            vx: (Math.random() - 0.5) * 450,
-            vy: (Math.random() - 0.5) * 450,
-            life: 1.0, size: Math.random() * 5 + 2
+            vx: (Math.random() - 0.5) * speed,
+            vy: (Math.random() - 0.5) * speed,
+            life: 1.0, size: Math.random() * sizeMax + 2
         });
     }
 }
 
+// Logic Update
 function update(dt) {
     if (gameState !== 'PLAY') return;
-    if (pTimer > 0) { pTimer -= dt; if(pTimer <= 0) activePower = null; }
+    
+    // Power-up Timer & Duration Scaling
+    if (pTimer > 0) { 
+        pTimer -= dt; 
+        if(pTimer <= 0) activePower = null; 
+    }
 
-    let worldSpeed = CONFIG.baseSpeed + (starsCount * 4.5); 
+    let worldSpeed = CONFIG.baseSpeed + (starsCount * 4.2); 
     if (activePower === 'SLOW') worldSpeed *= 0.6;
 
+    // Spawning logic
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacingBase + (worldSpeed * 0.5)) {
         let gap = Math.random() * (CONFIG.gapMax - CONFIG.gapMin) + CONFIG.gapMin;
         let h = Math.random() * (H - (gap + 200)) + 100;
         paws.push({ x: W + 100, yT: h, yB: h + gap, hit: false });
-        if (fishPending) { fishes.push({ x: W + 350, y: h + gap/2, collected: false, t: 0 }); fishPending = false; } 
-        else { stars.push({ x: W + 350, y: h + gap/2, collected: false, type: (consecutiveStreak >= 10 && Math.random() < 0.3) ? 'blue' : 'gold', angle: 0 }); }
+        if (fishPending) { 
+            fishes.push({ x: W + 350, y: h + gap/2, collected: false, t: 0 }); fishPending = false; 
+        } else { 
+            stars.push({ x: W + 350, y: h + gap/2, collected: false, type: (consecutiveStreak >= 10 && Math.random() < 0.3) ? 'blue' : 'gold', angle: 0 }); 
+        }
     }
 
+    // Obstacle logic
     paws.forEach(p => {
         p.x -= worldSpeed * dt;
         if (!p.hit && catX+30 > p.x+170 && catX-30 < p.x+230 && (catY-30 < p.yT || catY+30 > p.yB)) {
-            if (activePower === 'SHIELD') { p.hit = true; activePower = null; pTimer = 0; } else { gameOver(); }
+            if (activePower === 'SHIELD') { 
+                p.hit = true; 
+                createBurst(catX + 50, catY, '#FFB7B7', 30, 8, 900); // Shield Burst
+                activePower = null; pTimer = 0; 
+            } else { gameOver(); }
         }
     });
     paws = paws.filter(p => p.x > -450);
 
+    // Star logic (Magnet & Glow Rotation)
     stars.forEach(s => {
         s.x -= worldSpeed * dt;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
+        let rotSpeed = (activePower === 'MAGNET' && dist < CONFIG.magnetRange) ? 14 : 2;
         
-        // Circular Glow & Magnet Logic
-        let rotationSpeed = 2; 
-        if (activePower === 'MAGNET' && dist < CONFIG.magnetRange) {
-            rotationSpeed = 12; // Rotates faster when sucked in
-            s.x += (dx/dist)*850*dt;
-            s.y += (dy/dist)*850*dt;
+        if (activePower === 'MAGNET' && dist < CONFIG.magnetRange) { 
+            s.x += (dx/dist)*850*dt; s.y += (dy/dist)*850*dt; 
         }
-        s.angle += rotationSpeed * dt;
-
+        
+        s.angle += rotSpeed * dt;
+        
         if (!s.collected && dist < 65) {
             s.collected = true; 
             starsCount += (s.type === 'blue' ? 2 : 1); consecutiveStreak++;
@@ -192,81 +214,96 @@ function update(dt) {
     });
     stars = stars.filter(s => s.x > -150 && !s.collected);
 
+    // Fish logic
     fishes.forEach(f => {
         f.x -= worldSpeed * dt; f.t += dt; f.bob = Math.sin(f.t * 5) * 15;
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-(f.y+f.bob))**2) < 70) { f.collected = true; triggerPower(); }
     });
     fishes = fishes.filter(f => f.x > -150 && !f.collected);
 
+    // Particles logic
     particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 2.5; });
     particles = particles.filter(p => p.life > 0);
 
+    // Physics
     catV += CONFIG.gravity * dt; catY += catV * dt;
     if (catY > H || catY < 0) gameOver();
     roll += (activePower ? 4 : 2) * dt;
 }
 
+// Rendering
 function draw() {
     ctx.clearRect(0,0,W,H);
+    
+    // Draw Paws (with 30% fade if shield active)
     paws.forEach(p => {
-        ctx.save(); ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
-        ctx.save(); ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); ctx.restore();
+        ctx.save();
+        if (activePower === 'SHIELD') ctx.globalAlpha = 0.3; 
+        ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
+        ctx.restore();
+        ctx.save();
+        if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
+        ctx.restore();
     });
 
+    // Draw Particles
     particles.forEach(p => {
         ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
         ctx.globalAlpha = 1.0;
     });
 
-    // Stars with Glowing Aura
+    // Draw Stars with Circular Glow
     stars.forEach(s => {
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        
+        ctx.save(); ctx.translate(s.x, s.y);
         let col = s.type === 'blue' ? '0, 242, 255' : '255, 215, 0';
         let glow = ctx.createRadialGradient(0, 0, 5, 0, 0, 45);
-        glow.addColorStop(0, `rgba(${col}, 0.6)`);
-        glow.addColorStop(0.5, `rgba(${col}, 0.2)`);
-        glow.addColorStop(1, `rgba(${col}, 0)`);
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI*2); ctx.fill();
-
-        ctx.rotate(s.angle);
-        ctx.shadowBlur = 10; ctx.shadowColor = `rgba(${col}, 0.8)`;
-        ctx.fillStyle = s.type === 'blue' ? "#00F2FF" : "#FFD700";
+        glow.addColorStop(0, `rgba(${col}, 0.6)`); glow.addColorStop(1, `rgba(${col}, 0)`);
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI*2); ctx.fill();
+        ctx.rotate(s.angle); ctx.fillStyle = s.type === 'blue' ? "#00F2FF" : "#FFD700";
         ctx.beginPath(); for(let i=0; i<10; i++){ let r = i%2===0?22:10; let a = (i*Math.PI*2/10) - Math.PI/2; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
         ctx.fill(); ctx.restore();
     });
 
-    fishes.forEach(f => ctx.drawImage(assets.fish, f.x-35, (f.y+f.bob)-35, 70, 70));
+    // Draw Fishes with Glow
+    fishes.forEach(f => {
+        ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "#FFD700";
+        ctx.drawImage(assets.fish, f.x-35, (f.y+f.bob)-35, 70, 70);
+        ctx.restore();
+    });
 
-    // Power-up indicators
+    // Draw Power-up Bubble Aura
     if (activePower) {
-        let flicker = 1.0;
-        if (pTimer < 2.0 && Math.floor(Date.now() / 80) % 2 === 0) flicker = 0.2;
-        ctx.save(); ctx.translate(catX, catY);
-        let grad = ctx.createRadialGradient(0, 0, 40, 0, 0, 65);
+        let flicker = (pTimer < 2.0 && Math.floor(Date.now() / 80) % 2 === 0) ? 0.2 : 1.0;
+        let pulse = 1 + Math.sin(Date.now() / 200) * 0.05; 
+        ctx.save(); ctx.translate(catX, catY); ctx.scale(pulse, pulse);
         let col = activePower === 'SHIELD' ? '255,183,183' : (activePower === 'MAGNET' ? '0,242,255' : '255,215,0');
-        grad.addColorStop(0, `rgba(${col}, 0.1)`); grad.addColorStop(0.8, `rgba(${col}, 0.3)`); grad.addColorStop(1, `rgba(${col}, 0.9)`);
+        let grad = ctx.createRadialGradient(0, 0, 40, 0, 0, 72);
+        grad.addColorStop(0, `rgba(${col}, 0.05)`); grad.addColorStop(0.8, `rgba(${col}, 0.25)`); grad.addColorStop(1, `rgba(${col}, 0.9)`);
         ctx.globalAlpha = flicker; ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(0, 0, 65, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = `rgba(${col}, 1)`; ctx.lineWidth = 3;
-        ctx.stroke(); ctx.restore();
+        ctx.beginPath(); ctx.arc(0, 0, 72, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = `rgba(${col}, 1)`; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
     }
 
+    // Draw Cat
     ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll);
     ctx.drawImage(assets.cat, -41, -41, 82, 82); ctx.restore();
 }
 
+// Power-up Distribution Logic
 function triggerPower() { 
-    activePower = ['SHIELD', 'MAGNET', 'SLOW'][Math.floor(Math.random()*3)]; 
-    pTimer = CONFIG.baseDuration; 
+    let pool = ['SHIELD', 'MAGNET'];
+    if (starsCount >= 25) pool.push('SLOW'); // Locked until 25 points
+    activePower = pool[Math.floor(Math.random() * pool.length)];
+    
+    // Scale duration every 30 stars, max 14s
+    pTimer = Math.min(CONFIG.baseDur + (Math.floor(starsCount / 30) * 2), CONFIG.maxDur);
+    
     let s = document.getElementById('splash-text'); s.innerText = activePower; s.style.opacity = 1; setTimeout(()=>s.style.opacity=0, 1000);
 }
 
 function updateUI() { document.getElementById('star-display').innerText = starsCount; }
-function playMeow() { meowSFX.currentTime = 0; meowSFX.play().catch(() => {}); }
 
 function gameOver() { 
     if (gameState === 'OVER') return;
@@ -278,23 +315,30 @@ function gameOver() {
     document.getElementById('ui-layer').style.display = 'none'; 
 }
 
+// Event Listeners
 document.getElementById('start-trigger').onclick = () => { 
-    playMeow(); initAudio(); gameState = 'PLAY'; 
+    meowSFX.play().catch(() => {}); // Soft meow triggered ONLY on start
+    initAudio(); 
+    gameState = 'PLAY'; 
     document.getElementById('menu-overlay').style.display = 'none'; 
     document.getElementById('ui-layer').style.display = 'block'; 
     tracks[0].play(); 
 };
 
-document.getElementById('retry-trigger').onclick = () => { playMeow(); setTimeout(() => location.reload(), 200); };
+document.getElementById('retry-trigger').onclick = () => { 
+    setTimeout(() => location.reload(), 200); 
+};
+
 window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 
 function loop(time) {
     let dt = Math.min((time - lastTime) / 1000, 0.1);
-    lastTime = time;
-    update(dt); draw();
+    lastTime = time; update(dt); draw();
     requestAnimationFrame(loop);
 }
+
+// Initial Background
 bgLayer.style.backgroundImage = `url('${assets.day.src}')`;
 requestAnimationFrame(loop);
 </script>

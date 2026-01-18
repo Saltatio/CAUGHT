@@ -4,13 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CAUGHT!</title>
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; --dark-glass: rgba(20, 18, 24, 0.9);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Varela Round', sans-serif; overflow: hidden; touch-action: none; }
+        
+        body { 
+            margin: 0; 
+            background: #000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            font-family: 'Gaegu', cursive; 
+            font-weight: 700;
+            overflow: hidden; 
+            touch-action: none; 
+        }
         
         #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #1a1a2e; }
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
@@ -19,7 +31,7 @@
 
         /* HUD */
         #ui-layer { position: absolute; top: 40px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 58px; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
+        .score-text { color: white; font-size: 64px; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
         .progress-wrapper { width: 120px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px auto; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); box-shadow: 0 0 15px var(--gold); transition: width 0.3s ease; }
 
@@ -30,34 +42,32 @@
         }
         
         .main-title { 
-            font-size: 90px; color: white; margin: 0; 
-            letter-spacing: -1px; text-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            font-size: 64px; color: white; margin: 0; 
+            text-shadow: 0 5px 25px rgba(0,0,0,0.5);
             animation: float 4s ease-in-out infinite;
         }
         
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
         .high-score-badge {
-            background: rgba(255, 215, 0, 0.15); border: 1.5px solid var(--gold); color: var(--gold);
-            padding: 8px 20px; border-radius: 20px; font-size: 14px; margin-top: 15px;
-            letter-spacing: 1px; display: inline-block;
+            background: rgba(255, 215, 0, 0.15); border: 2px solid var(--gold); color: var(--gold);
+            padding: 4px 20px; border-radius: 20px; font-size: 22px; margin-top: 15px;
         }
 
-        .grid-label { color: rgba(255,255,255,0.4); font-size: 13px; margin: 35px 0 15px 0; letter-spacing: 2px; text-transform: uppercase; }
+        .grid-label { color: rgba(255,255,255,0.6); font-size: 20px; margin: 35px 0 15px 0; text-transform: uppercase; }
         .selection-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         
         .world-btn { 
-            padding: 12px 28px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-            color: white; border-radius: 25px; cursor: pointer; font-family: inherit; 
-            font-size: 12px; transition: 0.3s;
+            padding: 8px 28px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); 
+            color: white; border-radius: 25px; cursor: pointer; font-family: inherit; font-weight: 700;
+            font-size: 18px; transition: 0.3s;
         }
         .world-btn.selected { background: white; color: #1c1921; transform: scale(1.05); }
 
-        /* Companion Selection with Slow Spin on Hover */
         .cat-option { width: 90px; height: 90px; background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .cat-option img { width: 60px; height: 60px; opacity: 0.4; transition: transform 1.2s ease-in-out, opacity 0.3s; }
+        .cat-option img { width: 60px; height: 60px; opacity: 0.4; transition: transform 3s linear, opacity 0.3s; }
         
-        /* Spin effect on cursor hover */
+        /* Gentle slow spin on hover */
         .cat-option:hover img { 
             opacity: 1;
             transform: rotate(360deg);
@@ -66,14 +76,18 @@
         .cat-option.selected { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: scale(1.1); }
         .cat-option.selected img { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
 
-        .action-btn { padding: 20px 60px; font-size: 18px; border-radius: 40px; border: none; font-family: inherit; cursor: pointer; background: white; color: #1c1921; margin-top: 45px; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .action-btn { 
+            padding: 15px 50px; font-size: 26px; border-radius: 40px; border: none; font-family: inherit; font-weight: 700;
+            cursor: pointer; background: white; color: #1c1921; margin-top: 45px; transition: 0.3s; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        }
         .action-btn:hover { transform: translateY(-4px); background: var(--accent); color: white; }
 
-        #splash-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 48px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 30; text-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        #splash-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 52px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 30; text-shadow: 0 4px 15px rgba(0,0,0,0.6); }
 
         #end-overlay { display: none; }
-        .final-stars { font-size: 120px; color: white; margin: 5px 0; line-height: 1; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .end-quote { color: rgba(255,255,255,0.5); font-size: 18px; max-width: 300px; line-height: 1.5; margin-bottom: 35px; }
+        .final-stars { font-size: 110px; color: white; margin: 5px 0; line-height: 1; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .end-quote { color: rgba(255,255,255,0.8); font-size: 24px; max-width: 300px; line-height: 1.2; margin-bottom: 35px; }
     </style>
 </head>
 <body>
@@ -108,10 +122,10 @@
         </div>
 
         <div id="end-overlay" class="overlay">
-            <h2 style="color:white; font-size: 80px; margin: 0; letter-spacing: -2px;">Caught!</h2>
+            <h2 style="color:white; font-size: 64px; margin: 0;">Caught!</h2>
             <div id="final-stats" class="final-stars">0</div>
             <p class="end-quote">"Time spent with cats is never wasted."</p>
-            <button class="action-btn" onclick="resetToMenu()">More bonding time!</button>
+            <button class="action-btn" onclick="resetToMenu()">More bonding time! ❤️</button>
         </div>
     </div>
 
@@ -297,7 +311,7 @@ function draw() {
         ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); ctx.restore(); 
     });
     floatTexts.forEach(t => {
-        ctx.save(); ctx.globalAlpha = t.life; ctx.fillStyle = t.color; ctx.font = "28px Varela Round"; ctx.textAlign = "center";
+        ctx.save(); ctx.globalAlpha = t.life; ctx.fillStyle = t.color; ctx.font = "700 32px Gaegu"; ctx.textAlign = "center";
         ctx.fillText(t.text, t.x, t.y); ctx.restore();
     });
 

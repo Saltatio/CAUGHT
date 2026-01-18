@@ -3,74 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CAUGHT! - Master Zen Edition</title>
+    <title>CAUGHT! - Zen Glow Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; 
-            --light-glass: rgba(255, 255, 255, 0.35); --text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            --light-glass: rgba(255, 255, 255, 0.3); --text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+        body { margin: 0; background: #000; height: 100vh; font-family: 'Gaegu', cursive; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; }
         
-        body { 
-            margin: 0; background: #000; height: 100vh; font-family: 'Gaegu', cursive; 
-            overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center;
-        }
-
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #111; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; background: #0a0a0a; overflow: hidden; }
         
-        #bg-layer { 
-            position: absolute; inset: 0; background-size: cover; background-position: center; 
-            z-index: 1; opacity: 0.75; transition: 0.8s ease; 
-        }
-
+        /* 70% Transparency Background */
+        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; opacity: 0.7; transition: 0.8s ease; }
+        
         canvas { position: absolute; inset: 0; z-index: 5; display: block; width: 100%; height: 100%; }
-
+        
         #ui-layer { position: absolute; top: 20px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
         .score-text { color: white; font-size: 60px; margin: 0; text-shadow: var(--text-shadow); }
         
-        .overlay { 
-            position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); background: var(--light-glass); padding: 20px; text-align: center;
-        }
-        
+        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: var(--light-glass); padding: 20px; text-align: center; }
         h1 { color: white; font-size: 80px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
         h2 { color: white; font-size: 52px; margin: 0; text-shadow: var(--text-shadow); }
         
-        .selection-label { color: white; font-size: 18px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.4); margin-bottom: 8px; }
-        
-        .choice-btn { 
-            padding: 10px 20px; border: 2px solid rgba(255,255,255,0.7); 
-            background: rgba(255,255,255,0.2); color: white; border-radius: 15px; cursor: pointer; 
-            font-family: inherit; font-size: 18px; transition: 0.3s; 
-        }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.5); transform: scale(1.05); }
+        .selection-label { color: white; font-size: 18px; text-transform: uppercase; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .choice-btn { padding: 10px 20px; border: 2px solid rgba(255,255,255,0.7); background: rgba(255,255,255,0.2); color: white; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 18px; transition: 0.3s; }
+        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.4); transform: scale(1.05); }
         
         .cat-btn { width: 90px; height: 90px; border-radius: 50%; border: 3px solid transparent; transition: 0.3s; padding: 6px; background: rgba(255,255,255,0.3); }
         .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.5); }
         .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
-
-        .action-btn { 
-            padding: 14px 45px; font-size: 26px; border-radius: 50px; border: none; 
-            font-family: inherit; cursor: pointer; background: white; color: #222; 
-            margin-top: 20px; transition: 0.3s; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            white-space: nowrap;
-        }
+        
+        .action-btn { padding: 14px 45px; font-size: 26px; border-radius: 50px; border: none; font-family: inherit; cursor: pointer; background: white; color: #222; margin-top: 20px; transition: 0.3s; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); white-space: nowrap; }
         .action-btn:hover { transform: scale(1.05); background: var(--accent); color: white; }
-
-        #hi-score-box { 
-            background: rgba(0,0,0,0.45); padding: 6px 24px; border-radius: 30px; 
-            color: var(--gold); font-size: 22px; margin-top: 15px; 
-            border: 1.5px solid rgba(255,215,0,0.4); text-shadow: none; font-weight: 700;
-        }
-
+        
+        #hi-score-box { background: rgba(0,0,0,0.5); padding: 6px 24px; border-radius: 30px; color: var(--gold); font-size: 22px; margin-top: 15px; font-weight: 700; border: 1px solid rgba(255,215,0,0.3); }
+        
         #end-overlay { display: none; }
         #end-overlay.visible { display: flex; }
     </style>
 </head>
 <body>
-
     <div id="game-container">
         <div id="bg-layer"></div>
         <div id="ui-layer"><div class="score-text" id="star-display">0</div></div>
@@ -103,13 +77,9 @@
     </div>
 
 <script>
-/** * GAME CORE 
- */
 const CONFIG = { 
-    gravity: 1050, jump: -380, 
-    startSpeed: 240, maxSpeed: 460, 
-    speedInc: 18, powerDur: 8, 
-    magnetRange: 380 
+    gravity: 1050, jump: -380, startSpeed: 240, maxSpeed: 460, speedInc: 18,
+    minDur: 8, maxDur: 14, magnetRange: 380 
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -123,90 +93,56 @@ bgm.forEach(t => { t.loop = true; t.volume = 0.4; });
 
 let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now();
 let catY, catV = 0, catX = 180, catRoll = 0, currentSongIdx = 0;
-let paws = [], stars = [], fishes = [], particles = [];
+let paws = [], stars = [], fishes = [], particles = [], lastPowerUps = [];
 let activePower = null, pTimer = 0, fishQueued = false;
 
-function resize() { 
-    W = window.innerWidth; H = window.innerHeight; 
-    canvas.width = W; canvas.height = H; catY = H/2; 
-}
+function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
 
-function setWorld(s, e) {
+function setWorld(s, e) { 
     document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
-    e.classList.add('active'); 
-    document.getElementById('bg-layer').style.backgroundImage = `url(${s})`;
+    e.classList.add('active'); document.getElementById('bg-layer').style.backgroundImage = `url(${s})`;
 }
-
 function setCat(s, e) {
     document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active'));
-    e.classList.add('active'); 
-    assets.cat.src = s;
+    e.classList.add('active'); assets.cat.src = s;
 }
 
 function drawStarShape(x, y, r, p, color, alpha = 1) {
-    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-    ctx.translate(x, y); ctx.beginPath();
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.translate(x, y); ctx.beginPath();
     for (let i = 0; i < p * 2; i++) {
-        let angle = i * Math.PI / p;
-        let dist = i % 2 === 0 ? r : r / 2.5;
+        let angle = i * Math.PI / p; let dist = i % 2 === 0 ? r : r / 2.5;
         ctx.lineTo(Math.cos(angle) * dist, Math.sin(angle) * dist);
-    }
-    ctx.closePath(); ctx.fill(); ctx.restore();
-}
-
-function createBurst(x, y, color) {
-    for (let i = 0; i < 12; i++) {
-        particles.push({
-            x, y, color, 
-            vx: (Math.random() - 0.5) * 450, 
-            vy: (Math.random() - 0.5) * 450, 
-            life: 1.0, size: Math.random() * 8 + 4, type: 'star'
-        });
-    }
+    } ctx.closePath(); ctx.fill(); ctx.restore();
 }
 
 function createShatter(x, y) {
     for (let i = 0; i < 20; i++) {
-        particles.push({
-            x, y, vx: (Math.random() - 0.5) * 700, 
-            vy: (Math.random() - 0.5) * 700, 
-            life: 1.2, size: Math.random() * 12 + 4, 
-            color: '#fff', type: 'shard'
-        });
+        particles.push({ x, y, vx: (Math.random()-0.5)*700, vy: (Math.random()-0.5)*700, life: 1.2, size: Math.random()*12+4, color: '#fff', type: 'shard' });
     }
 }
 
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
-    // Music Manager
     let track = bgm[currentSongIdx];
     if (starsCount > 0 && starsCount % 30 >= 28) track.volume = Math.max(0, track.volume - dt * 0.3);
     if (starsCount > 0 && starsCount % 30 === 0 && track.volume < 0.1) {
-        track.pause(); track.currentTime = 0;
-        currentSongIdx = (currentSongIdx + 1) % bgm.length;
+        track.pause(); track.currentTime = 0; currentSongIdx = (currentSongIdx + 1) % bgm.length;
         bgm[currentSongIdx].volume = 0.4; bgm[currentSongIdx].play();
     }
 
-    // Physics
     let speed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20) * CONFIG.speedInc), CONFIG.maxSpeed);
     if (activePower === 'SLOW') speed *= 0.6;
     if (pTimer > 0) { pTimer -= dt; if (pTimer <= 0) activePower = null; }
 
-    // Spawning
     if (paws.length === 0 || (W - paws[paws.length-1].x) > 650) {
         let h = Math.random() * (H - 400) + 120;
         paws.push({ x: W + 150, yT: h, yB: h + 265, hit: false });
-        if (fishQueued) { 
-            fishes.push({ x: W + 400, y: h + 132, t: 0 }); 
-            fishQueued = false; 
-        } else {
-            stars.push({ x: W + 400, y: h + 132, type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rSpd: 1 });
-        }
+        if (fishQueued) { fishes.push({ x: W + 400, y: h + 132, t: 0 }); fishQueued = false; }
+        else { stars.push({ x: W + 400, y: h + 132, type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rot: 0, rSpd: 0.8 }); }
     }
 
-    // World Obstacles
     paws.forEach(p => {
         p.x -= speed * dt;
         if (!p.hit && catX+30 > p.x+185 && catX-30 < p.x+215 && (catY-30 < p.yT || catY+30 > p.yB)) {
@@ -215,97 +151,87 @@ function update(dt) {
         }
     });
 
-    // Stars & Magnet Physics
     stars.forEach((s, i) => {
         s.x -= speed * dt;
+        s.rot += s.rSpd * dt * 2; // Leisurely rotation
         if (activePower === 'MAGNET') {
             let dx = catX - s.x, dy = catY - s.y, dist = Math.hypot(dx, dy);
-            if (dist < CONFIG.magnetRange) {
-                s.x += (dx / dist) * 400 * dt; 
-                s.y += (dy / dist) * 400 * dt;
-                s.rSpd = 5; 
-            } else s.rSpd = 1;
+            if (dist < CONFIG.magnetRange) { 
+                s.x += (dx/dist)*380*dt; s.y += (dy/dist)*380*dt; 
+                s.rot += dt * 10; // Faster rotation when pulled
+            } 
         }
         if (Math.hypot(catX - s.x, catY - s.y) < 75) {
-            createBurst(s.x, s.y, s.type === 'BLUE' ? '#00F2FF' : '#FFD700');
             starsCount += (s.type === 'BLUE' ? 2 : 1);
             if (starsCount % 10 === 0) fishQueued = true;
             stars.splice(i, 1); updateUI();
         }
     });
 
-    // Fish Power-up
     fishes.forEach((f, i) => {
         f.x -= speed * dt; f.t += dt;
         if (Math.hypot(catX - f.x, catY - (f.y + Math.sin(f.t*5)*15)) < 85) {
             let pool = ['SHIELD', 'MAGNET'];
             if (starsCount >= 25) pool.push('SLOW');
+            if (lastPowerUps.length >= 2 && lastPowerUps[0] === lastPowerUps[1]) pool = pool.filter(p => p !== lastPowerUps[0]);
             activePower = pool[Math.floor(Math.random() * pool.length)];
-            pTimer = CONFIG.powerDur; 
+            lastPowerUps.push(activePower);
+            if (lastPowerUps.length > 2) lastPowerUps.shift();
+            pTimer = Math.min(CONFIG.minDur + Math.floor(starsCount/20)*2, CONFIG.maxDur);
             fishes.splice(i, 1);
         }
     });
 
-    // Delta-Time Particles
-    particles.forEach((p, i) => {
-        p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5;
-        if (p.life <= 0) particles.splice(i, 1);
-    });
-
+    particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5; if(p.life <= 0) particles.splice(i, 1); });
     catV += CONFIG.gravity * dt; catY += catV * dt;
     if (catY > H || catY < 0) gameOver();
     catRoll += 2.5 * dt;
-    paws = paws.filter(p => p.x > -450);
 }
 
 function draw() {
     ctx.clearRect(0, 0, W, H);
     
-    // 1. Paws
+    // Draw Paws
     paws.forEach(p => {
         ctx.save(); if(activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.4;
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 800);
-        ctx.translate(p.x + 200, p.yT); ctx.scale(1, -1);
-        ctx.drawImage(assets.paw, -200, 0, 400, 800);
-        ctx.restore();
+        ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 800); ctx.restore();
     });
 
-    // 2. Stars
+    // Draw Stars with Glow
     stars.forEach(s => {
         let col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
         ctx.save();
-        let g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 45);
-        g.addColorStop(0, col + '66'); g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, 45, 0, Math.PI*2); ctx.fill();
-        ctx.translate(s.x, s.y); ctx.rotate(catRoll * s.rSpd);
+        ctx.shadowBlur = 20; ctx.shadowColor = col;
+        ctx.translate(s.x, s.y); ctx.rotate(s.rot);
         drawStarShape(0, 0, 18, 5, col);
         ctx.restore();
     });
 
-    // 3. Fish
+    // Draw Fish with Glow
     fishes.forEach(f => {
-        ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "#FFB7B7";
+        ctx.save();
+        ctx.shadowBlur = 25; ctx.shadowColor = "#FFB7B7";
         ctx.drawImage(assets.fish, f.x-35, f.y-35 + Math.sin(f.t*5)*15, 70, 70);
         ctx.restore();
     });
 
-    // 4. Particles
+    // Draw Particles
     particles.forEach(p => {
-        if (p.type === 'shard') {
-            ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = '#fff';
-            ctx.translate(p.x, p.y); ctx.rotate(p.life * 10);
-            ctx.beginPath(); ctx.moveTo(-p.size, 0); ctx.lineTo(0, p.size); ctx.lineTo(p.size, 0); ctx.fill();
-            ctx.restore();
-        } else drawStarShape(p.x, p.y, p.size, 5, p.color, p.life);
+        if (p.type === 'shard') { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = '#fff'; ctx.translate(p.x, p.y); ctx.rotate(p.life*10); ctx.beginPath(); ctx.moveTo(-p.size, 0); ctx.lineTo(0, p.size); ctx.lineTo(p.size, 0); ctx.fill(); ctx.restore(); }
+        else drawStarShape(p.x, p.y, p.size, 5, p.color, p.life);
     });
 
-    // 5. Cat & Aura
+    // Draw Cat & Faltering Bubble
     ctx.save();
     if (activePower) {
         let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
+        let falter = (pTimer < 2.5 && Math.sin(Date.now() * 0.02) < 0) ? 0.1 : 0.3; // Faltering effect
         ctx.save(); ctx.translate(catX, catY);
-        ctx.fillStyle = `rgba(${col}, 0.2)`; ctx.beginPath(); ctx.arc(0, 0, 82, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = `rgba(${col}, 0.8)`; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
+        ctx.fillStyle = `rgba(${col}, ${falter})`;
+        ctx.beginPath(); ctx.arc(0, 0, 82, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = `rgba(${col}, ${falter * 3})`; ctx.lineWidth = 4; ctx.stroke();
+        ctx.restore();
     }
     ctx.translate(catX, catY); ctx.rotate(catRoll);
     ctx.drawImage(assets.cat, -45, -45, 90, 90);
@@ -313,37 +239,28 @@ function draw() {
 }
 
 function updateUI() { document.getElementById('star-display').innerText = starsCount; }
-
 function gameOver() {
     gameState = 'OVER'; bgm.forEach(t => { t.pause(); t.currentTime = 0; });
-    const best = parseInt(localStorage.getItem('caught_hiscore') || 0);
-    if (starsCount > best) localStorage.setItem('caught_hiscore', starsCount);
-    document.getElementById('final-stats').innerText = starsCount;
-    document.getElementById('hi-score-box').innerText = "BEST: " + Math.max(best, starsCount);
+    const best = parseInt(localStorage.getItem('caught_hiscore') || 0); if (starsCount > best) localStorage.setItem('caught_hiscore', starsCount);
+    document.getElementById('final-stats').innerText = starsCount; document.getElementById('hi-score-box').innerText = "BEST: " + Math.max(best, starsCount);
     document.getElementById('end-overlay').classList.add('visible');
 }
 
-// User Interaction triggers Music
 document.getElementById('start-trigger').onclick = () => {
+    bgm[0].currentTime = 0; bgm[0].play().catch(() => {});
     sfxMeow.play(); gameState = 'PLAY';
-    document.getElementById('menu-overlay').style.display = 'none';
-    document.getElementById('ui-layer').style.display = 'block';
-    bgm[0].play().catch(() => console.log("User must interact with screen first"));
+    document.getElementById('menu-overlay').style.display = 'none'; document.getElementById('ui-layer').style.display = 'block';
 };
-
 document.getElementById('retry-trigger').onclick = () => location.reload();
 
 window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
-window.addEventListener('touchstart', (e) => { 
-    if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } 
-}, {passive:false});
+window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 
 function loop(t) { 
     let dt = (t - lastTime) / 1000; lastTime = t; 
-    update(dt || 0.016); draw(); 
+    update(dt > 0.1 ? 0.016 : dt); draw(); 
     requestAnimationFrame(loop); 
 }
-
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
 requestAnimationFrame(loop);
 </script>

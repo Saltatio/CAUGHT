@@ -14,51 +14,44 @@
         
         #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: var(--dark); }
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
-        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background-image 0.8s ease; }
+        
+        /* Background Layer at 75% Transparency */
+        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background-image 0.8s ease; opacity: 0.75; }
 
         /* HUD */
         #ui-layer { position: absolute; top: 30px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: clamp(40px, 10vw, 60px); text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin: 0; }
-        .progress-wrapper { width: 160px; height: 14px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 10px auto; overflow: hidden; border: 3px solid white; }
+        .score-text { color: white; font-size: 50px; text-shadow: 4px 4px 0px rgba(0,0,0,0.5); margin: 0; }
+        .progress-wrapper { width: 160px; height: 12px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 10px auto; overflow: hidden; border: 2px solid white; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease; }
 
         /* Overlays */
         .overlay { 
             position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            backdrop-filter: blur(12px); background: rgba(0,0,0,0.7); padding: 20px; text-align: center;
+            backdrop-filter: blur(12px); background: rgba(0,0,0,0.75); padding: 20px; text-align: center;
         }
         
-        .main-title { font-size: clamp(45px, 12vw, 80px); color: white; margin: 0 0 15px 0; text-shadow: 6px 6px 0 var(--accent); line-height: 1; }
-        .grid-label { color: white; font-size: 12px; margin: 15px 0 8px 0; letter-spacing: 1px; opacity: 0.9; text-transform: uppercase; }
+        .main-title { font-size: 80px; color: white; margin: 0; text-shadow: 6px 6px 0 var(--accent); line-height: 1; }
+        .grid-label { color: white; font-size: 12px; margin: 15px 0 8px 0; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase; }
         .selection-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
         
-        .world-btn { padding: 10px 16px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 13px; }
-        .world-btn.selected { background: var(--accent); border-color: white; transform: scale(1.05); }
+        .world-btn { padding: 10px 18px; background: rgba(255,255,255,0.1); border: 2px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 13px; }
+        .world-btn.selected { background: var(--accent); transform: scale(1.05); }
 
-        /* Cat Selection Styles */
-        .cat-option { 
-            width: 85px; height: 85px; background: rgba(255,255,255,0.1); 
-            border: 4px solid white; border-radius: 20px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; 
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; 
-        }
+        .cat-option { width: 85px; height: 85px; background: rgba(255,255,255,0.1); border: 3px solid white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .cat-option img { width: 60px; height: 60px; object-fit: contain; }
-        
-        /* Slow Rotation on Hover */
         .cat-option:hover img { animation: slowSpin 4s linear infinite; }
-        .cat-option.selected { background: var(--accent); border-color: white; transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 138, 0, 0.6); }
+        .cat-option.selected { background: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
 
-        @keyframes slowSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        @keyframes slowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .action-btn { padding: 18px 60px; font-size: 28px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; margin-top: 20px; }
-        .action-btn:active { transform: translateY(5px); box-shadow: 0 3px 0px #b36100; }
+        /* End Game Styling */
+        .final-stars { font-size: 70px; color: var(--gold); text-shadow: 0 0 15px rgba(255,215,0,0.3); margin: 5px 0; line-height: 1; }
+        .end-quote { color: white; font-size: 18px; opacity: 0.85; margin: 12px 0; font-style: italic; max-width: 320px; line-height: 1.4; }
+        .action-btn { padding: 14px 40px; font-size: 22px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 6px 0px #b36100; margin-top: 15px; transition: 0.1s; }
+        .action-btn:active { transform: translateY(3px); box-shadow: 0 3px 0px #b36100; }
 
         #end-overlay { display: none; }
-        .final-stars { font-size: clamp(70px, 20vw, 120px); color: white; margin: 5px 0; }
-        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.4s; text-transform: uppercase; }
+        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 40px; text-shadow: 4px 4px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.4s; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -74,33 +67,34 @@
 
         <div id="menu-overlay" class="overlay">
             <h1 class="main-title">CAUGHT!</h1>
-            
             <p class="grid-label">Choose World</p>
             <div class="selection-grid">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">DUSK</button>
             </div>
-
             <p class="grid-label">Choose Cat</p>
             <div class="selection-grid">
                 <div class="cat-option selected" onclick="selectCat('cat.png', this)"><img src="cat.png"></div>
                 <div class="cat-option" onclick="selectCat('cat_black.png', this)"><img src="cat_black.png"></div>
                 <div class="cat-option" onclick="selectCat('cat_tabby.png', this)"><img src="cat_tabby.png"></div>
             </div>
-
             <button class="action-btn" id="start-trigger">START</button>
         </div>
 
         <div id="end-overlay" class="overlay">
-            <h1 class="main-title" style="font-size: 50px;">SCORE</h1>
+            <h1 class="main-title" style="font-size: 50px;">CAUGHT!</h1>
             <div id="final-stats" class="final-stars">0</div>
-            <button class="action-btn" onclick="resetToMenu()">RETRY</button>
+            <p class="end-quote">"Time spent with cats is never wasted"</p>
+            <button class="action-btn" onclick="resetToMenu()">RETURN TO MENU</button>
         </div>
     </div>
 
 <script>
-const CONFIG = { gravity: 0.46, jump: -8.3, maxVol: 0.5, minSpacing: 480, magnetRange: 420 };
+const CONFIG = { 
+    gravity: 0.46, jump: -8.3, maxVol: 0.5, minSpacing: 480, magnetRange: 420,
+    baseDuration: 8, maxDuration: 14 
+};
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const bgLayer = document.getElementById('bg-layer');
@@ -115,13 +109,9 @@ assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.
 let tracks = [], currentTrackIdx = 0;
 const trackFiles = ['spring.mp3', 'summer.mp3', 'autumn.mp3'];
 
-function initAudio() { 
-    tracks = trackFiles.map(file => { 
-        let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; 
-    }); 
-}
+function initAudio() { tracks = trackFiles.map(file => { let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; }); }
 
-let W, H, gameState = 'MENU', starsCount = 0, consecutiveStars = 0, frames = 0, fishPending = false;
+let W, H, gameState = 'MENU', starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let activePower = null, pTimer = 0;
 
@@ -140,6 +130,13 @@ window.selectCat = (src, el) => {
     assets.cat.src = src;
 };
 
+// Logic for Dynamic Power-Up Duration
+function getCurrentDuration() {
+    let extraSeconds = Math.floor(starsCount / 20) * 2;
+    let totalSeconds = Math.min(CONFIG.baseDuration + extraSeconds, CONFIG.maxDuration);
+    return totalSeconds * 60; // Returns frames at 60fps
+}
+
 function update() {
     if (gameState !== 'PLAY') return;
     frames++;
@@ -148,40 +145,39 @@ function update() {
     let worldSpeed = (W * 0.005 + (starsCount * 0.008));
     if (activePower === 'SLOW') worldSpeed *= 0.5;
 
-    // Obstacles
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacing) {
-        let gap = Math.floor(Math.random() * 70) + 195;
+        let gap = Math.floor(Math.random() * 70) + 200;
         let h = Math.random() * (H - (gap + 200)) + 100;
-        paws.push({ x: W + 100, yT: h, yB: h + gap });
-        if (fishPending) {
-            fishes.push({ x: W + 330, y: h + gap/2, collected: false, spawnFrame: frames });
-            fishPending = false;
-        } else {
-            stars.push({ x: W + 330, y: h + gap/2, collected: false, type: (consecutiveStars >= 10 && Math.random() < 0.2) ? 'blue' : 'gold' });
-        }
+        paws.push({ x: W + 100, yT: h, yB: h + gap, hit: false });
+        if (fishPending) { fishes.push({ x: W + 330, y: h + gap/2, collected: false, spawnFrame: frames }); fishPending = false; } 
+        else { stars.push({ x: W + 330, y: h + gap/2, collected: false, type: (Math.random() < 0.15) ? 'blue' : 'gold', angle: 0 }); }
     }
 
+    // Shield Mechanics: Break bubble but keep game going
     paws.forEach((p) => {
         p.x -= worldSpeed;
-        if (catX+22 > p.x+155 && catX-22 < p.x+245 && (catY-22 < p.yT || catY+22 > p.yB)) {
-            if (activePower === 'SHIELD') { activePower = null; pTimer = 0; createBurst(catX, catY, "#FFF", 20); showSplash("POOF!"); }
-            else { gameOver(); }
+        if (!p.hit && catX+22 > p.x+155 && catX-22 < p.x+245 && (catY-22 < p.yT || catY+22 > p.yB)) {
+            if (activePower === 'SHIELD') { 
+                p.hit = true; 
+                activePower = null; 
+                pTimer = 0; 
+                createBurst(catX, catY, "#FFF", 30); 
+                showSplash("SHIELD SHATTERED!");
+            } else { gameOver(); }
         }
     });
     paws = paws.filter(p => p.x > -450);
 
-    // Collectibles
+    // Glowing & Rotating Stars
     stars.forEach((s) => {
-        s.x -= worldSpeed;
+        s.x -= worldSpeed; s.angle += 0.04;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
         if (activePower === 'MAGNET' && !s.collected && dist < CONFIG.magnetRange) {
             s.x += (dx/dist)*18; s.y += (dy/dist)*18;
         }
         if (!s.collected && dist < 65) {
             s.collected = true;
-            let val = s.type === 'blue' ? 2 : 1;
-            starsCount += val; consecutiveStars += val;
-            if (consecutiveStars % 5 === 0) showSplash(consecutiveStars + " STREAK!");
+            starsCount += (s.type === 'blue' ? 2 : 1);
             createBurst(s.x, s.y, s.type === 'blue' ? '#00F2FF' : '#FFD700', 12);
             updateUI();
             if (starsCount % 10 === 0) fishPending = true;
@@ -208,42 +204,61 @@ function update() {
 
 function draw() {
     ctx.clearRect(0,0,W,H);
-
-    // Layer 1: Paws
     paws.forEach(p => {
-        ctx.save(); if(activePower==='SHIELD') ctx.globalAlpha=0.4;
+        ctx.save();
         ctx.translate(p.x+200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
         ctx.restore();
-        ctx.save(); if(activePower==='SHIELD') ctx.globalAlpha=0.4;
+        ctx.save();
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
         ctx.restore();
     });
 
-    // Layer 2: Stars/Fish
     stars.forEach(s => {
-        ctx.save(); ctx.fillStyle = s.type === 'blue' ? "#00F2FF" : "#FFD700";
-        ctx.translate(s.x, s.y); ctx.beginPath();
+        ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
+        let color = s.type === 'blue' ? "#00F2FF" : "#FFD700";
+        let grd = ctx.createRadialGradient(0,0,0,0,0,35);
+        grd.addColorStop(0, color); grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0,0,35,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = color; ctx.beginPath();
         for(let i=0; i<10; i++){ let r = i%2===0?22:11; let a = (i*Math.PI*2/10) - Math.PI/2; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
         ctx.closePath(); ctx.fill(); ctx.restore();
     });
-    fishes.forEach(f => ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80));
 
-    // Layer 3: Particles
+    fishes.forEach(f => ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80));
     particles.forEach(p => { ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.s, p.s); ctx.restore(); });
 
-    // Layer 4: The Cat (Always on Top)
+    // DRAW CAT & GLOWING/FLICKERING POWER BUBBLE
     ctx.save();
     ctx.translate(catX, catY); ctx.rotate(roll);
+    
     if (activePower) {
-        ctx.beginPath(); ctx.arc(0,0,75,0,Math.PI*2);
-        ctx.strokeStyle = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
-        ctx.lineWidth=6; ctx.stroke();
+        let pColor = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
+        
+        // Flicker Logic: When timer < 2s (120 frames), toggle visibility
+        let isVisible = true;
+        if (pTimer < 120 && Math.floor(frames / 6) % 2 === 0) isVisible = false;
+
+        if (isVisible) {
+            ctx.beginPath();
+            ctx.arc(0,0,75,0,Math.PI*2);
+            ctx.shadowColor = pColor;
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = pColor;
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow for cat
+        }
     }
+    
     ctx.drawImage(assets.cat, -45, -45, 90, 90);
     ctx.restore();
 }
 
-function triggerPower() { activePower = ['SHIELD', 'MAGNET', 'SLOW'][Math.floor(Math.random()*3)]; pTimer = 600; showSplash(activePower); }
+function triggerPower() { 
+    activePower = ['SHIELD', 'MAGNET', 'SLOW'][Math.floor(Math.random()*3)]; 
+    pTimer = getCurrentDuration(); 
+    showSplash(activePower); 
+}
 
 function handleMusic() {
     if (starsCount > 0 && starsCount % 30 === 0) {

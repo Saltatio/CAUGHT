@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CAUGHT!</title>
+    <title>CAUGHT! - Zen Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; --dark-glass: rgba(20, 18, 24, 0.95); }
@@ -24,6 +24,7 @@
         .score-text { color: white; font-size: 48px; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
         #progress-container { width: 140px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 5px auto; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.4s ease; }
+        #power-indicator { color: var(--blue); font-size: 18px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; opacity: 0; transition: opacity 0.3s; text-shadow: 0 0 10px var(--blue); }
 
         .overlay { 
             position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; 
@@ -35,22 +36,15 @@
         h2 { color: white; font-size: 48px; margin: 0; }
         p.quote { color: rgba(255,255,255,0.8); font-size: 20px; margin: 15px 0 25px 0; max-width: 320px; font-style: italic; line-height: 1.3; }
 
-        .selection-group { margin: 15px 0; width: 100%; max-width: 450px; }
-        .selection-label { color: rgba(255,255,255,0.5); font-size: 16px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .selection-grid { display: flex; gap: 15px; justify-content: center; }
-        
-        .choice-btn { 
-            padding: 8px 18px; border: 2px solid rgba(255,255,255,0.15); 
-            background: none; color: white; border-radius: 12px; cursor: pointer; 
-            font-family: inherit; font-size: 17px; transition: 0.3s;
+        .selection-grid { display: flex; gap: 15px; justify-content: center; margin: 20px 0; }
+        .cat-btn { 
+            width: 85px; height: 85px; border-radius: 50%; padding: 10px; border: 2px solid transparent; 
+            cursor: pointer; background: rgba(255,255,255,0.05); transition: 0.3s;
         }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255,215,0,0.1); transform: translateY(-2px); }
-        
-        @keyframes menuRoll { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .cat-btn { width: 85px; height: 85px; border-radius: 50%; padding: 10px; border: 2px solid transparent; overflow: hidden; transition: border-color 0.3s; }
-        .cat-btn.active { border-color: var(--gold); }
-        .cat-btn:hover img { animation: menuRoll 4s linear infinite; }
-        .cat-btn img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .cat-btn.active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+        .cat-btn:hover img { animation: menuRotate 4s linear infinite; }
+        @keyframes menuRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
 
         .action-btn { 
             padding: 14px 40px; font-size: 24px; border-radius: 40px; border: none; 
@@ -70,202 +64,233 @@
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
             <div id="progress-container"><div id="progress-fill"></div></div>
+            <div id="power-indicator">SHIELD ACTIVE</div>
         </div>
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
-            <div class="selection-group">
-                <div class="selection-label">Choose a Realm</div>
-                <div class="selection-grid" id="world-select">
-                    <button class="choice-btn active" onclick="setWorld('day.png', this)">Dawn</button>
-                    <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Noon</button>
-                    <button class="choice-btn" onclick="setWorld('evening.png', this)">Dusk</button>
-                </div>
+            <div class="selection-grid" id="cat-select">
+                <button class="cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png" alt="Cat"></button>
+                <button class="cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png" alt="Black Cat"></button>
+                <button class="cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png" alt="Tabby Cat"></button>
             </div>
-            <div class="selection-group">
-                <div class="selection-label">Choose a Companion</div>
-                <div class="selection-grid" id="cat-select">
-                    <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png" alt="Cat"></button>
-                    <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png" alt="Black Cat"></button>
-                    <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png" alt="Tabby Cat"></button>
-                </div>
-            </div>
-            <button class="action-btn" id="start-trigger">Start Session</button>
+            <button class="action-btn" id="start-trigger">Begin Purr-suit</button>
         </div>
 
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
             <p class="quote">"Time spent with cats is never wasted"</p>
             <div id="final-stats" style="font-size: 90px; color: white; line-height: 1; margin-bottom: 20px;">0</div>
-            <button class="action-btn" id="retry-trigger">More Bonding Time ❤️</button>
+            <button class="action-btn" id="retry-trigger">One More Time ❤️</button>
         </div>
     </div>
 
 <script>
 /**
- * CAUGHT! - Optimized Zen Engine
+ * CAUGHT! - Final Engine Core
  */
 const CONFIG = { 
     gravity: 1080, jump: -390, 
-    startSpeed: 230, maxChillSpeed: 400,
+    startSpeed: 230, maxZenSpeed: 420,
     speedInc: 15, magnetRange: 420, powerDur: 8
 };
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const assets = { paw: new Image(), fish: new Image(), cat: new Image() };
+
+// Assets
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.png';
 
-const bgmTracks = [new Audio('spring.mp3'), new Audio('summer.mp3'), new Audio('autumn.mp3')];
-bgmTracks.forEach(t => { t.loop = true; t.volume = 0.4; });
-
 let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now();
-let catY, catV = 0, catX = 160, catRoll = 0;
-let paws = [], stars = [], fishes = [];
-let activePower = null, pTimer = 0, currentTrackIdx = 0, fishPending = false;
+let catY, catV = 0, catX = 160, catRoll = 0, streak = 0;
+let paws = [], stars = [], fishes = [], particles = [];
+let activePower = null, pTimer = 0, fishPending = false;
 
 function resize() { 
     W = window.innerWidth; H = window.innerHeight; 
-    canvas.width = W; canvas.height = H; catY = H / 2; 
+    canvas.width = W; canvas.height = H; 
+    catY = H / 2; 
 }
 window.addEventListener('resize', resize); resize();
 
-function setWorld(src, el) {
-    document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('bg-layer').style.backgroundImage = `url(${src})`;
-}
 function setCat(src, el) {
-    document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    assets.cat.src = src;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active'); assets.cat.src = src;
 }
 
-function drawStarShape(ctx, x, y, rotation, spikes, outer, inner) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
+function createBurst(x, y, color, count = 15) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x, y, color,
+            vx: (Math.random() - 0.5) * 600,
+            vy: (Math.random() - 0.5) * 600,
+            life: 1.0,
+            size: Math.random() * 4 + 2
+        });
+    }
+}
+
+function drawStarShape(ctx, x, y, rotation, spikes, outer, inner, color) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rotation);
+    ctx.fillStyle = color; ctx.beginPath();
     let rot = Math.PI / 2 * 3, step = Math.PI / spikes;
-    ctx.beginPath(); ctx.moveTo(0, -outer);
+    ctx.moveTo(0, -outer);
     for (let i = 0; i < spikes; i++) {
         ctx.lineTo(Math.cos(rot) * outer, Math.sin(rot) * outer); rot += step;
         ctx.lineTo(Math.cos(rot) * inner, Math.sin(rot) * inner); rot += step;
     }
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
+    ctx.closePath(); ctx.fill(); ctx.restore();
 }
 
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
-    let worldSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount / 20) * CONFIG.speedInc), CONFIG.maxChillSpeed);
+    // Gradual Speed Logic (Increases every 20 points, capped at Zen speed)
+    let worldSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount / 20) * CONFIG.speedInc), CONFIG.maxZenSpeed);
     if (activePower === 'SLOW') worldSpeed *= 0.6;
 
-    if (pTimer > 0) { pTimer -= dt; if (pTimer <= 0) activePower = null; }
-
-    // Spawn Logic
-    if (paws.length === 0 || (W - paws[paws.length-1].x) > 620) {
-        let gapH = Math.random() * (H - 450) + 120;
-        paws.push({ x: W + 100, yTop: gapH, yBottom: gapH + 245, hit: false });
-        if (fishPending) { 
-            fishes.push({ x: W + 360, y: gapH + 122, t: 0 }); 
-            fishPending = false; 
-        } else { 
-            stars.push({ x: W + 360, y: gapH + 122, collected: false, roll: 0 }); 
+    // Power Timer & Flickering Indicator
+    if (pTimer > 0) {
+        pTimer -= dt;
+        const indicator = document.getElementById('power-indicator');
+        if (pTimer < 2) {
+            indicator.style.opacity = Math.floor(Date.now() / 150) % 2 === 0 ? 0 : 1;
+        } else {
+            indicator.style.opacity = 1;
+        }
+        if (pTimer <= 0) { 
+            activePower = null; 
+            indicator.style.opacity = 0; 
         }
     }
 
-    // Paws
-    paws.forEach(p => { 
-        p.x -= worldSpeed * dt; 
-        if (!p.hit && catX+25 > p.x+180 && catX-25 < p.x+220 && (catY-25 < p.yTop || catY+25 > p.yBottom)) {
-            if (activePower === 'SHIELD') { p.hit = true; activePower = null; } else { gameOver(); }
+    // Spawning (Includes Blue Star Logic)
+    if (paws.length === 0 || (W - paws[paws.length-1].x) > 620) {
+        let gapH = Math.random() * (H - 450) + 120;
+        paws.push({ x: W + 100, yTop: gapH, yBottom: gapH + 245, hit: false });
+        
+        if (fishPending) { 
+            fishes.push({ x: W + 360, y: gapH + 122, t: 0 }); 
+            fishPending = false; 
+        } else {
+            // Blue star spawns if streak >= 10 and 30% chance
+            let isBlue = (streak >= 10 && Math.random() > 0.7);
+            stars.push({ x: W + 360, y: gapH + 122, collected: false, roll: 0, type: isBlue ? 'BLUE' : 'GOLD' });
+        }
+    }
+
+    // Paws & Shield Collision
+    paws.forEach(p => {
+        p.x -= worldSpeed * dt;
+        if (!p.hit && catX + 25 > p.x + 180 && catX - 25 < p.x + 220 && (catY - 25 < p.yTop || catY + 25 > p.yBottom)) {
+            if (activePower === 'SHIELD') { 
+                p.hit = true; 
+                activePower = null; 
+                pTimer = 0;
+                createBurst(catX, catY, "white", 30); // Visual burst on shield hit
+            } else { 
+                gameOver(); 
+            }
         }
     });
 
-    // Stars (Rolling & Magnet Logic)
+    // Stars Logic
     stars.forEach(s => {
         s.x -= worldSpeed * dt;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
-        let inMagnetRange = activePower === 'MAGNET' && dist < CONFIG.magnetRange;
-
-        // Visual speeds
-        s.roll += inMagnetRange ? 12 * dt : 1.5 * dt;
-
-        if (inMagnetRange) { 
-            s.x += (dx/dist) * 480 * dt; 
-            s.y += (dy/dist) * 480 * dt; 
+        
+        if (activePower === 'MAGNET' && dist < CONFIG.magnetRange) {
+            s.x += (dx/dist) * 500 * dt; s.y += (dy/dist) * 500 * dt;
         }
 
-        if (!s.collected && dist < 65) { 
-            s.collected = true; starsCount++; updateUI();
+        s.roll += 2.2 * dt; // Zen rolling
+
+        if (!s.collected && dist < 65) {
+            s.collected = true; 
+            let scoreVal = s.type === 'BLUE' ? 2 : 1;
+            starsCount += scoreVal;
+            streak++; // Increment streak
+            updateUI();
+            createBurst(s.x, s.y, s.type === 'BLUE' ? '#00F2FF' : '#FFD700');
             if (starsCount % 10 === 0) fishPending = true;
         }
+
+        // Reset streak if a star is missed
+        if (!s.collected && s.x < -50) streak = 0;
     });
 
-    // Fish (Bobbing)
+    // Fishes
     fishes.forEach(f => {
         f.x -= worldSpeed * dt; f.t += dt;
-        if (Math.sqrt((catX-f.x)**2 + (catY-(f.y + Math.sin(f.t*5)*15))**2) < 75) { 
+        if (Math.sqrt((catX-f.x)**2 + (catY-(f.y + Math.sin(f.t*5)*15))**2) < 75) {
             f.collected = true; triggerPower(); 
+            createBurst(f.x, f.y, "#FFB7B7");
         }
     });
 
-    // Cat Physics
+    // Particles & Physics
+    particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5; });
     catV += CONFIG.gravity * dt; catY += catV * dt;
     if (catY > H || catY < 0) gameOver();
-    catRoll += (activePower ? 4.5 : 2.5) * dt;
-    
-    // Cleanup
+    catRoll += 2.5 * dt;
+
     paws = paws.filter(p => p.x > -450);
     stars = stars.filter(s => !s.collected && s.x > -100);
     fishes = fishes.filter(f => !f.collected && f.x > -100);
+    particles = particles.filter(p => p.life > 0);
 }
 
 function draw() {
     ctx.clearRect(0,0,W,H);
     
-    // 1. Paws
-    ctx.save();
+    // Draw Order: Paws -> Stars -> Particles -> Cat
     paws.forEach(p => {
-        ctx.save(); 
-        if (activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.35;
+        ctx.save(); if (activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.4;
         ctx.drawImage(assets.paw, p.x, p.yBottom, 400, 700);
         ctx.translate(p.x + 200, p.yTop); ctx.scale(1, -1); ctx.drawImage(assets.paw, -200, 0, 400, 700);
         ctx.restore();
     });
-    ctx.restore();
 
-    // 2. Stars
     stars.forEach(s => {
-        ctx.save(); ctx.fillStyle = "#FFD700"; ctx.shadowBlur = 18; ctx.shadowColor = "gold";
-        drawStarShape(ctx, s.x, s.y, s.roll, 5, 18, 8); ctx.restore();
+        ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = s.type === 'BLUE' ? '#00F2FF' : 'gold';
+        drawStarShape(ctx, s.x, s.y, s.roll, 5, 18, 8, s.type === 'BLUE' ? '#00F2FF' : '#FFD700');
+        ctx.restore();
     });
 
-    // 3. Fish
     fishes.forEach(f => {
-        ctx.save(); ctx.shadowBlur = 22; ctx.shadowColor = "#00F2FF";
+        ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = "#FFB7B7";
         ctx.drawImage(assets.fish, f.x-35, f.y-35 + Math.sin(f.t*5)*15, 70, 70); ctx.restore();
     });
 
-    // 4. Cat & Aura
+    particles.forEach(p => {
+        ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    });
+
+    // Cat & Bubble
     ctx.save();
     if (activePower) {
         ctx.save(); ctx.translate(catX, catY);
-        let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
-        ctx.strokeStyle = `rgba(${col}, 0.8)`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0,0,72,0,Math.PI*2); ctx.stroke();
-        ctx.restore();
+        let color = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
+        // Pulsing Bubble Effect
+        let alpha = (pTimer < 2 && Math.floor(Date.now()/150)%2 === 0) ? 0.2 : 0.7;
+        ctx.strokeStyle = `rgba(${color}, ${alpha})`;
+        ctx.lineWidth = 5; ctx.shadowBlur = 20; ctx.shadowColor = `rgb(${color})`;
+        ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     }
     ctx.translate(catX, catY); ctx.rotate(catRoll);
-    ctx.drawImage(assets.cat, -42, -42, 84, 84);
-    ctx.restore();
+    ctx.drawImage(assets.cat, -42, -42, 84, 84); ctx.restore();
 }
 
 function triggerPower() {
-    let pool = ['SHIELD', 'MAGNET']; if (starsCount >= 25) pool.push('SLOW');
+    const pool = ['SHIELD', 'MAGNET', 'SLOW'];
     activePower = pool[Math.floor(Math.random() * pool.length)];
     pTimer = CONFIG.powerDur;
+    const el = document.getElementById('power-indicator');
+    el.innerText = activePower + " ACTIVE";
+    el.style.opacity = 1;
 }
 
 function updateUI() {
@@ -275,17 +300,16 @@ function updateUI() {
 
 function gameOver() { 
     gameState = 'OVER'; 
-    bgmTracks.forEach(t => { t.pause(); t.currentTime = 0; });
     document.getElementById('final-stats').innerText = starsCount;
     document.getElementById('end-overlay').classList.add('visible'); 
 }
 
+// Handlers
 document.getElementById('start-trigger').onclick = () => {
     gameState = 'PLAY'; document.getElementById('menu-overlay').style.display = 'none';
-    document.getElementById('ui-layer').style.display = 'block'; bgmTracks[0].play();
+    document.getElementById('ui-layer').style.display = 'block';
 };
 document.getElementById('retry-trigger').onclick = () => location.reload();
-
 window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 
@@ -294,6 +318,7 @@ function loop(time) {
     lastTime = time; update(dt); draw();
     requestAnimationFrame(loop);
 }
+
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
 requestAnimationFrame(loop);
 </script>

@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CAUGHT!</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <style>
         :root { 
             --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; --dark-glass: rgba(20, 18, 24, 0.9);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Fredoka', sans-serif; overflow: hidden; touch-action: none; }
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Varela Round', sans-serif; overflow: hidden; touch-action: none; }
         
         #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #1a1a2e; }
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
@@ -19,8 +19,8 @@
 
         /* HUD */
         #ui-layer { position: absolute; top: 40px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 52px; font-weight: 700; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
-        .progress-wrapper { width: 100px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px auto; overflow: hidden; }
+        .score-text { color: white; font-size: 58px; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
+        .progress-wrapper { width: 120px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px auto; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); box-shadow: 0 0 15px var(--gold); transition: width 0.3s ease; }
 
         /* Overlays */
@@ -30,7 +30,7 @@
         }
         
         .main-title { 
-            font-size: 80px; font-weight: 700; color: white; margin: 0; 
+            font-size: 90px; color: white; margin: 0; 
             letter-spacing: -1px; text-shadow: 0 5px 25px rgba(0,0,0,0.5);
             animation: float 4s ease-in-out infinite;
         }
@@ -38,34 +38,42 @@
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
         .high-score-badge {
-            background: rgba(255, 215, 0, 0.15); border: 2px solid var(--gold); color: var(--gold);
-            padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-top: 15px;
-            letter-spacing: 1px; display: inline-block; text-transform: uppercase;
+            background: rgba(255, 215, 0, 0.15); border: 1.5px solid var(--gold); color: var(--gold);
+            padding: 8px 20px; border-radius: 20px; font-size: 14px; margin-top: 15px;
+            letter-spacing: 1px; display: inline-block;
         }
 
-        .grid-label { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; margin: 30px 0 15px 0; letter-spacing: 2.5px; text-transform: uppercase; }
+        .grid-label { color: rgba(255,255,255,0.4); font-size: 13px; margin: 35px 0 15px 0; letter-spacing: 2px; text-transform: uppercase; }
         .selection-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         
         .world-btn { 
-            padding: 12px 26px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-            color: white; border-radius: 25px; cursor: pointer; font-family: inherit; font-weight: 700; 
-            font-size: 11px; transition: 0.3s; letter-spacing: 1px;
+            padding: 12px 28px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 25px; cursor: pointer; font-family: inherit; 
+            font-size: 12px; transition: 0.3s;
         }
-        .world-btn.selected { background: white; color: #1c1921; transform: scale(1.05); border-color: white; }
+        .world-btn.selected { background: white; color: #1c1921; transform: scale(1.05); }
 
-        .cat-option { width: 85px; height: 85px; background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .cat-option img { width: 55px; height: 55px; opacity: 0.4; transition: 0.3s; }
+        /* Companion Selection with Slow Spin on Hover */
+        .cat-option { width: 90px; height: 90px; background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .cat-option img { width: 60px; height: 60px; opacity: 0.4; transition: transform 1.2s ease-in-out, opacity 0.3s; }
+        
+        /* Spin effect on cursor hover */
+        .cat-option:hover img { 
+            opacity: 1;
+            transform: rotate(360deg);
+        }
+        
         .cat-option.selected { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: scale(1.1); }
         .cat-option.selected img { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
 
-        .action-btn { padding: 18px 80px; font-size: 16px; font-weight: 700; border-radius: 40px; border: none; font-family: inherit; cursor: pointer; background: white; color: #1c1921; margin-top: 45px; transition: 0.3s; letter-spacing: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .action-btn:hover { transform: translateY(-4px); background: var(--accent); color: white; box-shadow: 0 15px 35px rgba(255,183,183,0.3); }
+        .action-btn { padding: 20px 60px; font-size: 18px; border-radius: 40px; border: none; font-family: inherit; cursor: pointer; background: white; color: #1c1921; margin-top: 45px; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .action-btn:hover { transform: translateY(-4px); background: var(--accent); color: white; }
 
-        #splash-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; color: white; font-size: 42px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 30; text-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        #splash-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 48px; opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 30; text-shadow: 0 4px 15px rgba(0,0,0,0.6); }
 
         #end-overlay { display: none; }
-        .final-stars { font-size: 110px; font-weight: 700; color: white; margin: 5px 0; line-height: 1; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .end-quote { color: rgba(255,255,255,0.4); font-size: 16px; font-weight: 500; max-width: 280px; line-height: 1.5; margin-bottom: 30px; font-style: italic; }
+        .final-stars { font-size: 120px; color: white; margin: 5px 0; line-height: 1; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .end-quote { color: rgba(255,255,255,0.5); font-size: 18px; max-width: 300px; line-height: 1.5; margin-bottom: 35px; }
     </style>
 </head>
 <body>
@@ -81,13 +89,13 @@
 
         <div id="menu-overlay" class="overlay">
             <h1 class="main-title">Caught!</h1>
-            <div id="best-score-tag" class="high-score-badge" style="display: none;">BEST SESSION: 0</div>
+            <div id="best-score-tag" class="high-score-badge" style="display: none;">Best Session: 0</div>
             
             <p class="grid-label">World</p>
             <div class="selection-grid">
-                <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
-                <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
-                <button class="world-btn" onclick="selectWorld('evening', this)">DUSK</button>
+                <button class="world-btn selected" onclick="selectWorld('day', this)">Dawn</button>
+                <button class="world-btn" onclick="selectWorld('afternoon', this)">Noon</button>
+                <button class="world-btn" onclick="selectWorld('evening', this)">Dusk</button>
             </div>
             
             <p class="grid-label">Companion</p>
@@ -96,14 +104,14 @@
                 <div class="cat-option" onclick="selectCat('cat_black.png', this)"><img src="cat_black.png"></div>
                 <div class="cat-option" onclick="selectCat('cat_tabby.png', this)"><img src="cat_tabby.png"></div>
             </div>
-            <button class="action-btn" id="start-trigger">START SESSION</button>
+            <button class="action-btn" id="start-trigger">Start Session</button>
         </div>
 
         <div id="end-overlay" class="overlay">
-            <h2 style="color:rgba(255,255,255,0.2); font-size: 12px; letter-spacing: 5px; margin: 0; font-weight: 700;">GAME OVER</h2>
+            <h2 style="color:white; font-size: 80px; margin: 0; letter-spacing: -2px;">Caught!</h2>
             <div id="final-stats" class="final-stars">0</div>
             <p class="end-quote">"Time spent with cats is never wasted."</p>
-            <button class="action-btn" onclick="resetToMenu()">RETRY</button>
+            <button class="action-btn" onclick="resetToMenu()">More bonding time!</button>
         </div>
     </div>
 
@@ -138,7 +146,6 @@ let W, H, gameState = 'MENU', starsCount = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], floatTexts = [], roll = 0;
 let activePower = null, pTimer = 0, consecutiveStreak = 0;
 
-// NEW DIMENSION CONSTANTS
 const CAT_SIZE = 82; 
 const STAR_RADIUS_OUTER = 20;
 const STAR_RADIUS_INNER = 10;
@@ -150,7 +157,7 @@ window.addEventListener('resize', resize); resize();
 const highscore = localStorage.getItem('caught_highscore') || 0;
 if (highscore > 0) {
     const tag = document.getElementById('best-score-tag');
-    tag.innerText = `BEST SESSION: ${highscore}`;
+    tag.innerText = `Best Session: ${highscore}`;
     tag.style.display = 'inline-block';
 }
 
@@ -290,7 +297,7 @@ function draw() {
         ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); ctx.restore(); 
     });
     floatTexts.forEach(t => {
-        ctx.save(); ctx.globalAlpha = t.life; ctx.fillStyle = t.color; ctx.font = "700 32px Fredoka"; ctx.textAlign = "center";
+        ctx.save(); ctx.globalAlpha = t.life; ctx.fillStyle = t.color; ctx.font = "28px Varela Round"; ctx.textAlign = "center";
         ctx.fillText(t.text, t.x, t.y); ctx.restore();
     });
 

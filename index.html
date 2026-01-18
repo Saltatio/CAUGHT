@@ -15,18 +15,21 @@
             font-weight: 700; overflow: hidden; touch-action: none; 
         }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #1a1a2e; }
-        canvas { display: block; width: 100%; height: 100%; z-index: 5; position: relative; }
+        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000; }
         
-        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; opacity: 0.7; transition: background-image 1.2s ease; }
+        /* Strict 70% transparency for background images */
+        #bg-layer { 
+            position: absolute; inset: 0; background-size: cover; background-position: center; 
+            z-index: 1; opacity: 0.7; transition: background-image 1.2s ease; 
+        }
+
+        /* Canvas sits above the background layer */
+        canvas { position: absolute; inset: 0; z-index: 5; display: block; width: 100%; height: 100%; }
 
         #ui-layer { position: absolute; top: 20px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
         .score-text { color: white; font-size: 48px; margin: 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
         #progress-container { width: 140px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 5px auto; overflow: hidden; }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.4s ease; }
-        
-        #power-indicator-wrap { margin-top: 10px; opacity: 0; transition: 0.3s; transform: scale(1); }
-        #power-label { color: white; font-size: 14px; text-transform: uppercase; letter-spacing: 3px; background: rgba(255,255,255,0.1); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px); }
 
         .overlay { 
             position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; 
@@ -34,30 +37,33 @@
             background: var(--dark-glass); padding: 40px; text-align: center;
         }
         
-        h1 { color: white; font-size: 52px; margin: 0 0 10px 0; letter-spacing: 2px; }
-        .selection-group { margin: 15px 0; width: 100%; max-width: 450px; }
-        .selection-label { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .selection-grid { display: flex; gap: 10px; justify-content: center; }
+        h1 { color: white; font-size: 52px; margin: 0 0 20px 0; letter-spacing: 2px; }
+        h2 { color: white; font-size: 48px; margin: 0; }
+        p.quote { color: rgba(255,255,255,0.8); font-size: 20px; margin: 10px 0 20px 0; max-width: 320px; font-style: italic; line-height: 1.3; }
+
+        .selection-group { margin: 12px 0; width: 100%; max-width: 450px; }
+        .selection-label { color: rgba(255,255,255,0.5); font-size: 16px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .selection-grid { display: flex; gap: 15px; justify-content: center; }
         
         .choice-btn { 
-            padding: 8px 15px; border: 2px solid rgba(255,255,255,0.1); 
-            background: none; color: white; border-radius: 10px; cursor: pointer; 
-            font-family: inherit; font-size: 16px; transition: 0.3s;
+            padding: 8px 18px; border: 2px solid rgba(255,255,255,0.15); 
+            background: none; color: white; border-radius: 12px; cursor: pointer; 
+            font-family: inherit; font-size: 17px; transition: 0.3s;
         }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+        .choice-btn.active { border-color: var(--gold); background: rgba(255,215,0,0.1); transform: translateY(-2px); }
         
-        .cat-btn { width: 75px; height: 75px; border-radius: 50%; padding: 8px; border: 2px solid transparent; background: rgba(255,255,255,0.05); }
-        .cat-btn.active { border-color: var(--gold); }
-        .cat-btn:hover img { animation: menuRotate 4s linear infinite; }
-        @keyframes menuRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .cat-btn { width: 85px; height: 85px; border-radius: 50%; padding: 10px; border: 2px solid transparent; overflow: hidden; transition: 0.3s; }
+        .cat-btn.active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
         .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
 
         .action-btn { 
             padding: 14px 40px; font-size: 24px; border-radius: 40px; border: none; 
             font-family: inherit; font-weight: 700; cursor: pointer; background: white; 
-            color: #1c1921; margin-top: 25px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            color: #1c1921; margin-top: 15px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-        .action-btn:hover { background: var(--accent); color: white; transform: scale(1.05); }
+        .action-btn:hover { transform: scale(1.05); background: var(--accent); color: white; }
+
+        #high-score-display { color: var(--gold); font-size: 18px; margin-top: 10px; letter-spacing: 2px; }
 
         #end-overlay { display: none; }
         #end-overlay.visible { display: flex; }
@@ -70,49 +76,44 @@
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
             <div id="progress-container"><div id="progress-fill"></div></div>
-            <div id="power-indicator-wrap"><span id="power-label">ACTIVE</span></div>
         </div>
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
-            
             <div class="selection-group">
-                <div class="selection-label">Select Realm</div>
+                <div class="selection-label">Choose a Realm</div>
                 <div class="selection-grid" id="world-select">
-                    <button class="choice-btn active" onclick="setWorld('dawn.png', this)">Dawn</button>
-                    <button class="choice-btn" onclick="setWorld('noon.png', this)">Noon</button>
-                    <button class="choice-btn" onclick="setWorld('dusk.png', this)">Dusk</button>
+                    <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
+                    <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
+                    <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
                 </div>
             </div>
-
             <div class="selection-group">
-                <div class="selection-label">Select Companion</div>
+                <div class="selection-label">Choose a Companion</div>
                 <div class="selection-grid" id="cat-select">
-                    <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
-                    <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
-                    <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
+                    <button class="choice-btn cat-btn active" data-cat="cat.png" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
+                    <button class="choice-btn cat-btn" data-cat="cat_black.png" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
+                    <button class="choice-btn cat-btn" data-cat="cat_tabby.png" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
                 </div>
             </div>
-
-            <button class="action-btn" id="start-trigger">Start Purring</button>
+            <button class="action-btn" id="start-trigger">Start Session</button>
         </div>
 
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
-            <div id="final-stats" style="font-size: 80px; color: white; margin: 10px 0;">0</div>
-            <button class="action-btn" id="retry-trigger">Retry Session</button>
+            <p class="quote">"Time spent with cats is never wasted."</p>
+            <div id="final-stats" style="font-size: 90px; color: white; line-height: 1;">0</div>
+            <div id="high-score-display">BEST: 0</div>
+            <button class="action-btn" id="retry-trigger" style="margin-top: 30px;">More Bonding Time ❤️</button>
         </div>
     </div>
 
 <script>
-/**
- * CAUGHT! - Final Zen Engine
- */
 const CONFIG = { 
     gravity: 1080, jump: -390, 
-    startSpeed: 230, maxZenSpeed: 400,
-    speedInc: 12, magnetRange: 420, powerDur: 8
+    startSpeed: 230, maxChillSpeed: 400,
+    speedInc: 15, magnetRange: 420, powerDur: 8
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -120,112 +121,103 @@ const ctx = canvas.getContext('2d');
 const assets = { paw: new Image(), fish: new Image(), cat: new Image() };
 assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.png';
 
-// BGM Audio Context (Make sure files exist)
-const bgmTracks = [new Audio('track1.mp3'), new Audio('track2.mp3'), new Audio('track3.mp3')];
-bgmTracks.forEach(t => { t.loop = true; t.volume = 0.5; });
+// Audio
+const sfxMeow = new Audio('meow.mp3'); sfxMeow.volume = 0.15;
+const bgmTracks = [new Audio('song1.mp3'), new Audio('song2.mp3'), new Audio('song3.mp3')];
+bgmTracks.forEach(t => { t.loop = true; t.volume = 0.4; });
 
 let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now();
 let catY, catV = 0, catX = 160, catRoll = 0, streak = 0;
-let paws = [], stars = [], fishes = [], particles = [];
-let activePower = null, pTimer = 0, fishQueued = false, currentTrackIdx = 0;
+let paws = [], stars = [], fishes = [];
+let activePower = null, pTimer = 0, currentTrackIdx = 0, fishPending = false;
 
-function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H / 2; }
+function resize() { 
+    W = window.innerWidth; H = window.innerHeight; 
+    canvas.width = W; canvas.height = H; catY = H / 2; 
+}
 window.addEventListener('resize', resize); resize();
 
+// Persistence Logic
 function setWorld(src, el) {
     document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     document.getElementById('bg-layer').style.backgroundImage = `url(${src})`;
 }
+
 function setCat(src, el) {
     document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active'); assets.cat.src = src;
+    el.classList.add('active');
+    assets.cat.src = src;
+    localStorage.setItem('savedCat', src);
 }
 
-function createBurst(x, y, color, count = 15) {
-    for (let i = 0; i < count; i++) {
-        particles.push({ x, y, color, vx: (Math.random()-0.5)*600, vy: (Math.random()-0.5)*600, life: 1.0, size: Math.random()*4+2 });
-    }
+// Load Saved Data
+const savedCat = localStorage.getItem('savedCat');
+if (savedCat) {
+    assets.cat.src = savedCat;
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cat === savedCat);
+    });
 }
 
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
-    // BGM Management
-    const curTrack = bgmTracks[currentTrackIdx];
-    if (starsCount > 0 && starsCount % 30 >= 28) {
-        curTrack.volume = Math.max(0, curTrack.volume - dt * 0.25);
-    }
-    if (starsCount > 0 && starsCount % 30 === 0 && curTrack.volume < 0.05) {
-        curTrack.pause(); curTrack.currentTime = 0;
+    // BGM Cycling logic
+    const track = bgmTracks[currentTrackIdx];
+    if (starsCount > 0 && starsCount % 30 >= 28) { track.volume = Math.max(0, track.volume - dt * 0.2); }
+    if (starsCount > 0 && starsCount % 30 === 0 && track.volume < 0.1) {
+        track.pause(); track.currentTime = 0;
         currentTrackIdx = (currentTrackIdx + 1) % bgmTracks.length;
-        bgmTracks[currentTrackIdx].volume = 0.5; bgmTracks[currentTrackIdx].play();
+        bgmTracks[currentTrackIdx].volume = 0.4; bgmTracks[currentTrackIdx].play();
     }
 
-    // Delta Time Zen Speed
-    let worldSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20)*CONFIG.speedInc), CONFIG.maxZenSpeed);
+    let worldSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20)*CONFIG.speedInc), CONFIG.maxChillSpeed);
     if (activePower === 'SLOW') worldSpeed *= 0.6;
 
-    if (pTimer > 0) {
-        pTimer -= dt;
-        const wrap = document.getElementById('power-indicator-wrap');
-        wrap.style.opacity = (pTimer < 2 && Math.floor(Date.now()/150)%2===0) ? 0.3 : 1;
-        if (pTimer <= 0) { activePower = null; wrap.style.opacity = 0; }
-    }
+    if (pTimer > 0) { pTimer -= dt; if (pTimer <= 0) activePower = null; }
 
-    // Obstacle & Item Spawning
+    // Spawning logic
     if (paws.length === 0 || (W - paws[paws.length-1].x) > 620) {
-        const gapSize = 160 + Math.random() * 90; // Dynamic 160-250px gap
-        const gapH = Math.random() * (H - 450) + 120;
-        paws.push({ x: W + 100, yTop: gapH, yBottom: gapH + gapSize, hit: false });
-        
-        if (fishQueued) {
-            fishes.push({ x: W + 360, y: gapH + (gapSize/2), t: 0 });
-            fishQueued = false;
+        let gapH = Math.random() * (H - 450) + 120;
+        paws.push({ x: W + 100, yTop: gapH, yBottom: gapH + 245, hit: false });
+        if (fishPending) { 
+            fishes.push({ x: W + 360, y: gapH + 122, t: 0 }); 
+            fishPending = false; 
         } else {
             let isBlue = (streak >= 10 && Math.random() > 0.7);
-            stars.push({ x: W + 360, y: gapH + (gapSize/2), collected: false, roll: 0, type: isBlue ? 'BLUE' : 'GOLD' });
+            stars.push({ x: W + 360, y: gapH + 122, collected: false, roll: 0, type: isBlue ? 'BLUE' : 'GOLD' });
         }
     }
 
-    // Paws & Shield Logic
     paws.forEach(p => {
         p.x -= worldSpeed * dt;
         if (!p.hit && catX+25 > p.x+180 && catX-25 < p.x+220 && (catY-25 < p.yTop || catY+25 > p.yBottom)) {
-            if (activePower === 'SHIELD') { 
-                p.hit = true; activePower = null; pTimer = 0;
-                createBurst(catX, catY, "white", 30);
-            } else { gameOver(); }
+            if (activePower === 'SHIELD') { p.hit = true; activePower = null; pTimer = 0; }
+            else { gameOver(); }
         }
     });
 
-    // Stars & Streak Logic
     stars.forEach(s => {
         s.x -= worldSpeed * dt;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
-        if (activePower === 'MAGNET' && dist < CONFIG.magnetRange) { s.x += (dx/dist)*550*dt; s.y += (dy/dist)*550*dt; }
+        if (activePower === 'MAGNET' && dist < CONFIG.magnetRange) { s.x += (dx/dist)*500*dt; s.y += (dy/dist)*500*dt; }
         s.roll += 2.2 * dt;
         if (!s.collected && dist < 65) {
             s.collected = true; streak++;
-            const lastVal = starsCount;
+            let lastVal = starsCount;
             starsCount += (s.type === 'BLUE' ? 2 : 1);
-            updateUI(); 
-            createBurst(s.x, s.y, s.type === 'BLUE' ? '#00F2FF' : '#FFD700');
-            // Immediate fish trigger
-            if (Math.floor(starsCount/10) > Math.floor(lastVal/10)) fishQueued = true;
+            updateUI();
+            if (Math.floor(starsCount/10) > Math.floor(lastVal/10)) fishPending = true;
         }
-        if (!s.collected && s.x < -50) streak = 0; // Miss reset streak
+        if (!s.collected && s.x < -50) streak = 0;
     });
 
-    // Fishes
     fishes.forEach(f => {
         f.x -= worldSpeed * dt; f.t += dt;
-        if (Math.sqrt((catX-f.x)**2 + (catY-(f.y + Math.sin(f.t*5)*15))**2) < 75) {
-            f.collected = true; triggerPower(); createBurst(f.x, f.y, "#FFB7B7");
-        }
+        if (Math.sqrt((catX-f.x)**2 + (catY-(f.y + Math.sin(f.t*5)*15))**2) < 75) { f.collected = true; triggerPower(); }
     });
 
-    particles.forEach(p => { p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*1.5; });
     catV += CONFIG.gravity * dt; catY += catV * dt;
     if (catY > H || catY < 0) gameOver();
     catRoll += 2.5 * dt;
@@ -233,13 +225,12 @@ function update(dt) {
     paws = paws.filter(p => p.x > -450);
     stars = stars.filter(s => !s.collected && s.x > -100);
     fishes = fishes.filter(f => !f.collected && f.x > -100);
-    particles = particles.filter(p => p.life > 0);
 }
 
 function draw() {
     ctx.clearRect(0,0,W,H);
-    
-    // 1. Paws
+
+    // LAYER 1: Paws
     paws.forEach(p => {
         ctx.save(); if (activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.4;
         ctx.drawImage(assets.paw, p.x, p.yBottom, 400, 700);
@@ -247,10 +238,9 @@ function draw() {
         ctx.restore();
     });
 
-    // 2. Stars
+    // LAYER 2: Stars & Powerups
     stars.forEach(s => {
         ctx.save(); ctx.fillStyle = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
-        ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
         ctx.translate(s.x, s.y); ctx.rotate(s.roll);
         ctx.beginPath(); for(let i=0; i<5; i++) { 
             ctx.lineTo(Math.cos((i*72-90)*Math.PI/180)*18, Math.sin((i*72-90)*Math.PI/180)*18);
@@ -258,36 +248,25 @@ function draw() {
         } ctx.closePath(); ctx.fill(); ctx.restore();
     });
 
-    // 3. Fish
     fishes.forEach(f => {
-        ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "#FFB7B7";
-        ctx.drawImage(assets.fish, f.x-35, f.y-35 + Math.sin(f.t*5)*15, 70, 70); ctx.restore();
+        ctx.save(); ctx.drawImage(assets.fish, f.x-35, f.y-35 + Math.sin(f.t*5)*15, 70, 70); ctx.restore();
     });
 
-    // 4. Particles
-    particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); });
-
-    // 5. Cat & Bubble
+    // LAYER 3: Cat & Aura (Always top-most)
     ctx.save();
     if (activePower) {
         ctx.save(); ctx.translate(catX, catY);
         let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
-        ctx.strokeStyle = `rgba(${col}, 0.8)`; ctx.lineWidth = 5; ctx.shadowBlur = 20; ctx.shadowColor = `rgb(${col})`;
-        ctx.beginPath(); ctx.arc(0,0,75,0,Math.PI*2); ctx.stroke(); ctx.restore();
+        ctx.strokeStyle = `rgba(${col}, 0.8)`; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0,0,75,0,Math.PI*2); ctx.stroke();
+        ctx.restore();
     }
     ctx.translate(catX, catY); ctx.rotate(catRoll);
     ctx.drawImage(assets.cat, -42, -42, 84, 84); ctx.restore();
 }
 
 function triggerPower() {
-    let pool = ['SHIELD', 'MAGNET'];
-    if (starsCount >= 25) pool.push('SLOW'); // Locked until 25
-    activePower = pool[Math.floor(Math.random() * pool.length)];
-    pTimer = CONFIG.powerDur;
-    const label = document.getElementById('power-label');
-    label.innerText = activePower + " ACTIVE";
-    label.style.borderColor = activePower === 'SHIELD' ? 'white' : (activePower === 'MAGNET' ? 'var(--gold)' : 'var(--blue)');
-    document.getElementById('power-indicator-wrap').style.opacity = 1;
+    let pool = ['SHIELD', 'MAGNET']; if (starsCount >= 25) pool.push('SLOW');
+    activePower = pool[Math.floor(Math.random() * pool.length)]; pTimer = CONFIG.powerDur;
 }
 
 function updateUI() {
@@ -296,19 +275,25 @@ function updateUI() {
 }
 
 function gameOver() { 
-    gameState = 'OVER'; 
-    bgmTracks.forEach(t => { t.pause(); t.currentTime = 0; });
-    document.getElementById('final-stats').innerText = starsCount; 
+    gameState = 'OVER'; bgmTracks.forEach(t => { t.pause(); t.currentTime = 0; });
+    
+    // Manage High Score
+    const best = parseInt(localStorage.getItem('hiScore') || 0);
+    if (starsCount > best) localStorage.setItem('hiScore', starsCount);
+    
+    document.getElementById('final-stats').innerText = starsCount;
+    document.getElementById('high-score-display').innerText = "BEST: " + (starsCount > best ? starsCount : best);
     document.getElementById('end-overlay').classList.add('visible'); 
 }
 
 document.getElementById('start-trigger').onclick = () => { 
-    gameState = 'PLAY'; 
+    sfxMeow.play(); gameState = 'PLAY'; 
     document.getElementById('menu-overlay').style.display = 'none'; 
     document.getElementById('ui-layer').style.display = 'block'; 
     bgmTracks[0].play();
 };
 document.getElementById('retry-trigger').onclick = () => location.reload();
+
 window.addEventListener('mousedown', () => { if(gameState==='PLAY') catV = CONFIG.jump; });
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; } }, {passive:false});
 
@@ -316,7 +301,7 @@ function loop(time) {
     let dt = Math.min((time - lastTime) / 1000, 0.1); lastTime = time;
     update(dt); draw(); requestAnimationFrame(loop);
 }
-document.getElementById('bg-layer').style.backgroundImage = "url('dawn.png')";
+document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
 requestAnimationFrame(loop);
 </script>
 </body>

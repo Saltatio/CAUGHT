@@ -3,45 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Caught! - Full Pro Edition</title>
+    <title>CAUGHT! - Bold & Playful Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #FFD700; --blue: #00F2FF; --pink: #FF85A1; }
+        :root { 
+            --gold: #FFD700; 
+            --blue: #00F2FF; 
+            --accent: #FF8A00; /* Bold, energetic orange */
+            --dark: #1a1a1a;
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
         body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Fredoka One', cursive; overflow: hidden; touch-action: none; }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #1a1a1a; }
+        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: var(--dark); }
         canvas { display: block; width: 100%; height: 100%; z-index: 2; position: relative; }
         #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background-image 0.8s ease; }
 
         /* UI HUD */
         #ui-layer { position: absolute; top: 30px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 60px; text-shadow: 4px 4px 0px rgba(0,0,0,0.6); margin-bottom: 2px; }
-        .progress-label { color: var(--gold); font-size: 14px; letter-spacing: 1px; margin-bottom: 5px; text-shadow: 2px 2px 2px rgba(0,0,0,0.5); }
-        .progress-wrapper { width: 160px; height: 16px; background: rgba(0,0,0,0.4); border-radius: 20px; margin: 0 auto; overflow: hidden; border: 3px solid white; }
+        .score-text { color: white; font-size: 65px; text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin-bottom: 5px; }
+        .progress-label { color: var(--gold); font-size: 14px; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .progress-wrapper { width: 180px; height: 18px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 0 auto; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease; }
 
         /* Overlays */
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.5); transition: opacity 0.8s ease; }
+        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); transition: opacity 0.8s ease; }
         
-        /* End Screen Logic */
+        /* Menu Elements */
+        .world-grid { display: flex; gap: 10px; margin-bottom: 25px; }
+        .world-btn { padding: 12px 24px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 14px; transition: 0.2s; }
+        .world-btn.selected { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.05); }
+
+        /* End Screen - Centered & Bold */
         #end-overlay { display: none; opacity: 0; pointer-events: none; }
         #end-overlay.active { display: flex; opacity: 1; pointer-events: all; }
-        
-        .end-title { font-size: 85px; color: white; margin: 0; text-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .end-quote { font-style: italic; opacity: 0.9; margin: 20px auto; font-size: 18px; max-width: 300px; color: #ffe4e1; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); line-height: 1.5; }
-        .final-stars { font-size: 120px; margin: 0px 0 20px 0; color: white; text-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+        .end-title { font-size: 95px; color: white; margin: 0; text-shadow: 0 10px 20px rgba(0,0,0,0.5); letter-spacing: -2px; }
+        .end-quote { 
+            font-style: italic; 
+            opacity: 0.9; 
+            margin: 10px auto 30px auto; 
+            font-size: 19px; 
+            max-width: 320px; 
+            color: #f0f0f0; 
+            line-height: 1.5; 
+            text-align: center; /* Centralized quote */
+        }
+        .final-stars { font-size: 140px; margin: 0; color: white; text-shadow: 0 8px 30px rgba(0,0,0,0.6); line-height: 1; }
 
-        /* Buttons & Cards */
-        .char-grid { display: flex; gap: 15px; margin: 30px 0; }
-        .char-card { width: 90px; height: 90px; border-radius: 20px; background: white; border: 4px solid transparent; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .char-card img { width: 65px; height: 65px; }
-        .char-card.selected { border-color: var(--pink); transform: scale(1.1); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        /* Action Button */
+        .action-btn { padding: 20px 70px; font-size: 32px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; transition: 0.1s; }
+        .action-btn:active { transform: translateY(5px); box-shadow: 0 3px 0px #b36100; }
 
-        .action-btn { padding: 18px 60px; font-size: 26px; border-radius: 60px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 8px 0px #d64d6d; transition: 0.1s; }
-        .action-btn:active { transform: translateY(4px); box-shadow: 0 4px 0px #d64d6d; }
-
-        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; text-shadow: 4px 4px 0 rgba(0,0,0,0.4); pointer-events: none; z-index: 30; opacity: 0; transition: 0.5s; text-transform: uppercase; }
+        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 55px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.5s; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -50,25 +63,33 @@
         <div id="bg-layer"></div>
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
-            <div class="progress-label">POWER-UP PROGRESS</div>
+            <div class="progress-label">POWER-UP INCOMING</div>
             <div class="progress-wrapper"><div id="progress-fill"></div></div>
         </div>
         <p id="splash-text"></p>
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
-            <h1 style="font-size: 80px; color: white; margin: 0; text-shadow: 5px 5px 0 var(--pink);">CAUGHT!</h1>
-            <div class="char-grid">
-                <div class="char-card selected" onclick="selectChar(0, this)"><img src="cat.png"></div>
-                <div class="char-card" onclick="selectChar(1, this)"><img src="cat_black.png"></div>
-                <div class="char-card" onclick="selectChar(2, this)"><img src="cat_tabby.png"></div>
+            <h1 style="font-size: 90px; color: white; margin: 10px; text-shadow: 8px 8px 0 var(--accent);">CAUGHT!</h1>
+            
+            <div class="world-grid">
+                <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
+                <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
+                <button class="world-btn" onclick="selectWorld('evening', this)">DUSK</button>
             </div>
+
+            <div style="margin-bottom: 40px;">
+                <div style="width:120px; height:120px; background:white; border-radius:35px; display:flex; align-items:center; justify-content:center; border:6px solid var(--accent); box-shadow: 0 12px 25px rgba(0,0,0,0.4);">
+                    <img src="cat.png" style="width:85px;">
+                </div>
+            </div>
+
             <button class="action-btn" id="start-trigger">START</button>
         </div>
 
         <div id="end-overlay" class="overlay">
-            <h1 class="end-title">Caught!</h1>
-            <p class="end-quote">"Time spent with cats is never wasted"</p>
+            <h1 class="end-title">CAUGHT!</h1>
+            <p class="end-quote">"Time spent with cats is never wasted."</p>
             <div id="final-stats" class="final-stars">0</div>
             <button class="action-btn" onclick="resetToMenu()">RETRY</button>
         </div>
@@ -76,11 +97,11 @@
 
 <script>
 const CONFIG = { 
-    gravity: 0.48,      // Floatier, less jumpy gravity
-    jump: -8.5,         // Smoother lift
+    gravity: 0.46, 
+    jump: -8.3, 
     maxVol: 0.5, 
     minSpacing: 480, 
-    magnetRange: 420
+    magnetRange: 420 
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -89,16 +110,16 @@ const bgLayer = document.getElementById('bg-layer');
 
 const assets = { 
     day: new Image(), afternoon: new Image(), evening: new Image(),
-    paw: new Image(), fish: new Image(), 
-    cats: [new Image(), new Image(), new Image()] 
+    paw: new Image(), fish: new Image(), cat: new Image() 
 };
 assets.day.src = 'day.png'; assets.afternoon.src = 'afternoon.png'; assets.evening.src = 'evening.png';
-assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png';
-assets.cats[0].src = 'cat.png'; assets.cats[1].src = 'cat_black.png'; assets.cats[2].src = 'cat_tabby.png';
+assets.paw.src = 'paw.png'; assets.fish.src = 'fish.png'; assets.cat.src = 'cat.png';
 
 let tracks = [], currentTrackIdx = 0;
 const trackFiles = ['spring.mp3', 'summer.mp3', 'autumn.mp3'];
+
 function initAudio() { 
+    tracks.forEach(t => { t.pause(); t.src = ''; });
     tracks = trackFiles.map(file => { 
         let a = new Audio(file); a.loop = true; a.volume = CONFIG.maxVol; return a; 
     }); 
@@ -106,15 +127,15 @@ function initAudio() {
 
 let W, H, gameState = 'MENU', starsCount = 0, consecutiveStars = 0, frames = 0, fishPending = false;
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
-let selCat = assets.cats[0], activePower = null, pTimer = 0;
+let activePower = null, pTimer = 0;
 
 function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
 window.addEventListener('resize', resize); resize();
 
-window.selectChar = (idx, el) => { 
-    selCat = assets.cats[idx]; 
-    document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected')); 
-    el.classList.add('selected'); 
+window.selectWorld = (id, el) => {
+    document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    bgLayer.style.backgroundImage = `url('${assets[id].src}')`;
 };
 
 function update() {
@@ -125,7 +146,7 @@ function update() {
     let baseSpeed = (W * 0.005 + (starsCount * 0.008));
     let worldSpeed = (activePower === 'SLOW') ? baseSpeed * 0.5 : baseSpeed;
 
-    // Spawn Logic with 180-250px Vertical Gap
+    // Spawn Logic with 180-250px Gap
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacing) {
         let currentGap = Math.floor(Math.random() * 71) + 180; 
         let h = Math.random() * (H - (currentGap + 200)) + 100; 
@@ -136,7 +157,7 @@ function update() {
             fishPending = false; 
         } else {
             let isBlue = (consecutiveStars >= 10 && Math.random() < 0.2);
-            stars.push({ x: W + 330, y: h + currentGap/2, collected: false, rot: 0, type: isBlue ? 'blue' : 'gold' });
+            stars.push({ x: W + 330, y: h + currentGap/2, collected: false, type: isBlue ? 'blue' : 'gold' });
         }
     }
 
@@ -148,14 +169,12 @@ function update() {
                 activePower = null; pTimer = 0;
                 createBurst(catX, catY, "white", 20);
                 showSplash("POOF!");
-            } else { 
-                gameOver(); 
-            }
+            } else { gameOver(); }
         }
         if (p.x < -450) paws.splice(i, 1);
     });
 
-    // Stars & Streak Reset
+    // Stars
     stars.forEach((s, i) => {
         s.x -= worldSpeed;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
@@ -175,7 +194,6 @@ function update() {
         if (!s.collected && s.x < -50) { consecutiveStars = 0; stars.splice(i, 1); }
     });
 
-    // Fish
     fishes.forEach((f, i) => {
         f.x -= worldSpeed; f.bob = Math.sin((frames - f.spawnFrame) * 0.1) * 15;
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-(f.y+f.bob))**2) < 70) {
@@ -192,7 +210,6 @@ function update() {
 
 function updateUI() {
     document.getElementById('star-display').innerText = starsCount;
-    // Progress Bar for 10-star Power-Up Milestone
     let progress = (starsCount % 10) / 10 * 100;
     if (starsCount > 0 && starsCount % 10 === 0) progress = 100;
     document.getElementById('progress-fill').style.width = progress + "%";
@@ -201,18 +218,21 @@ function updateUI() {
 function triggerPowerUp() {
     let opts = ['SHIELD', 'MAGNET', 'SLOW'];
     activePower = opts[Math.floor(Math.random()*opts.length)];
-    pTimer = 600; // 10s duration
+    pTimer = 600;
     showSplash(activePower);
 }
 
 function handleMusicProgression() {
     let cycle = starsCount % 30;
-    if (cycle === 28) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.3;
-    if (cycle === 29) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.1;
+    if (cycle === 28) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.2;
+    if (cycle === 29) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.05;
+    
     if (starsCount > 0 && cycle === 0) {
-        tracks[currentTrackIdx].pause(); tracks[currentTrackIdx].currentTime = 0;
+        tracks[currentTrackIdx].pause();
+        tracks[currentTrackIdx].currentTime = 0;
         currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
-        tracks[currentTrackIdx].volume = CONFIG.maxVol; tracks[currentTrackIdx].play();
+        tracks[currentTrackIdx].volume = CONFIG.maxVol;
+        tracks[currentTrackIdx].play().catch(() => {});
     }
 }
 
@@ -221,10 +241,12 @@ function draw() {
     paws.forEach(p => {
         ctx.save();
         if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
-        ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650); ctx.restore();
+        ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
+        ctx.restore();
         ctx.save();
         if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
-        ctx.drawImage(assets.paw, p.x, p.yB, 400, 650); ctx.restore();
+        ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
+        ctx.restore();
     });
 
     stars.forEach(s => { if(!s.collected) {
@@ -238,10 +260,10 @@ function draw() {
     if (activePower) {
         ctx.beginPath(); ctx.arc(catX, catY, 80, 0, Math.PI*2);
         ctx.strokeStyle = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
-        ctx.lineWidth = 5; ctx.stroke();
+        ctx.lineWidth = 6; ctx.stroke();
     }
 
-    ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(selCat, -50, -50, 100, 100); ctx.restore();
+    ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(assets.cat, -50, -50, 100, 100); ctx.restore();
     particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.s, p.s); });
 }
 
@@ -261,7 +283,7 @@ function drawStar(cx, cy, spikes, rOuter, rInner) {
 
 function showSplash(txt) {
     const s = document.getElementById('splash-text');
-    s.innerText = txt; s.style.opacity = 1;
+    s.innerText = txt.toUpperCase(); s.style.opacity = 1;
     setTimeout(() => s.style.opacity = 0, 1200);
 }
 
@@ -272,7 +294,7 @@ function gameOver() {
     document.getElementById('ui-layer').style.display = 'none';
     const end = document.getElementById('end-overlay');
     end.style.display = 'flex';
-    setTimeout(() => end.classList.add('active'), 50); 
+    setTimeout(() => end.classList.add('active'), 100);
 }
 
 function resetToMenu() { location.reload(); }
@@ -281,12 +303,12 @@ document.getElementById('start-trigger').onclick = () => {
     initAudio(); gameState = 'PLAY'; 
     document.getElementById('menu-overlay').style.display = 'none'; 
     document.getElementById('ui-layer').style.display = 'block'; 
-    tracks[0].play(); 
+    tracks[currentTrackIdx].play().catch(() => {});
 };
 
 window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; }}, {passive:false});
 
-bgLayer.style.backgroundImage = "url('day.png')";
+bgLayer.style.backgroundImage = `url('${assets.day.src}')`;
 function loop() { update(); draw(); requestAnimationFrame(loop); }
 loop();
 </script>

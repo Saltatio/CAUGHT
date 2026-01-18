@@ -9,7 +9,7 @@
         :root { 
             --gold: #FFD700; 
             --blue: #00F2FF; 
-            --accent: #FF8A00; /* Bold, energetic orange */
+            --accent: #FF8A00; 
             --dark: #1a1a1a;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -21,40 +21,49 @@
 
         /* UI HUD */
         #ui-layer { position: absolute; top: 30px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 65px; text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin-bottom: 5px; }
-        .progress-label { color: var(--gold); font-size: 14px; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-        .progress-wrapper { width: 180px; height: 18px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 0 auto; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .score-text { color: white; font-size: 60px; text-shadow: 6px 6px 0px rgba(0,0,0,0.5); margin-bottom: 5px; }
+        .progress-label { color: var(--gold); font-size: 12px; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .progress-wrapper { width: 160px; height: 14px; background: rgba(0,0,0,0.5); border-radius: 20px; margin: 0 auto; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #progress-fill { width: 0%; height: 100%; background: var(--gold); transition: width 0.2s ease; }
 
-        /* Overlays */
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); transition: opacity 0.8s ease; }
+        /* Responsive Overlays */
+        .overlay { 
+            position: absolute; inset: 0; z-index: 20; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); 
+            transition: opacity 0.8s ease; 
+            padding: 20px; text-align: center;
+        }
         
-        /* Menu Elements */
-        .world-grid { display: flex; gap: 10px; margin-bottom: 25px; }
-        .world-btn { padding: 12px 24px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 14px; transition: 0.2s; }
-        .world-btn.selected { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.05); }
+        /* Titles - Fluid Sizing */
+        .main-title { 
+            font-size: clamp(50px, 15vw, 85px); 
+            color: white; margin: 10px 0; 
+            text-shadow: 6px 6px 0 var(--accent); 
+            line-height: 1;
+            width: 100%;
+        }
 
-        /* End Screen - Centered & Bold */
+        .grid-label { color: white; font-size: 12px; margin: 15px 0 8px 0; letter-spacing: 1px; opacity: 0.8; }
+        .selection-grid { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; max-width: 90vw; }
+        
+        .world-btn { padding: 10px 16px; background: rgba(255,255,255,0.1); border: 3px solid white; color: white; border-radius: 12px; cursor: pointer; font-family: 'Fredoka One'; font-size: 13px; transition: 0.2s; }
+        .world-btn.selected { background: var(--accent); border-color: white; transform: scale(1.05); }
+
+        .cat-option { width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 4px solid white; border-radius: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .cat-option img { width: 45px; height: 45px; object-fit: contain; }
+        .cat-option.selected { background: var(--accent); border-color: white; transform: translateY(-5px); }
+
+        /* End Screen Fixes */
         #end-overlay { display: none; opacity: 0; pointer-events: none; }
         #end-overlay.active { display: flex; opacity: 1; pointer-events: all; }
-        .end-title { font-size: 95px; color: white; margin: 0; text-shadow: 0 10px 20px rgba(0,0,0,0.5); letter-spacing: -2px; }
-        .end-quote { 
-            font-style: italic; 
-            opacity: 0.9; 
-            margin: 10px auto 30px auto; 
-            font-size: 19px; 
-            max-width: 320px; 
-            color: #f0f0f0; 
-            line-height: 1.5; 
-            text-align: center; /* Centralized quote */
-        }
-        .final-stars { font-size: 140px; margin: 0; color: white; text-shadow: 0 8px 30px rgba(0,0,0,0.6); line-height: 1; }
+        .end-title { font-size: clamp(60px, 18vw, 95px); color: white; margin: 0; text-shadow: 0 10px 20px rgba(0,0,0,0.5); letter-spacing: -2px; }
+        .final-stars { font-size: clamp(80px, 25vw, 140px); margin: 10px 0; color: white; text-shadow: 0 8px 30px rgba(0,0,0,0.6); line-height: 0.9; }
 
-        /* Action Button */
-        .action-btn { padding: 20px 70px; font-size: 32px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; transition: 0.1s; }
+        .action-btn { padding: 18px 60px; font-size: 28px; border-radius: 50px; border: none; font-family: 'Fredoka One', cursive; cursor: pointer; background: var(--accent); color: white; box-shadow: 0 8px 0px #b36100; transition: 0.1s; margin-top: 20px; }
         .action-btn:active { transform: translateY(5px); box-shadow: 0 3px 0px #b36100; }
 
-        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 55px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.5s; text-transform: uppercase; }
+        #splash-text { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 45px; text-shadow: 5px 5px 0 rgba(0,0,0,0.5); pointer-events: none; z-index: 30; opacity: 0; transition: 0.5s; text-transform: uppercase; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
@@ -70,18 +79,20 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
-            <h1 style="font-size: 90px; color: white; margin: 10px; text-shadow: 8px 8px 0 var(--accent);">CAUGHT!</h1>
+            <h1 class="main-title">CAUGHT!</h1>
             
-            <div class="world-grid">
+            <div class="grid-label">CHOOSE YOUR VIBE</div>
+            <div class="selection-grid">
                 <button class="world-btn selected" onclick="selectWorld('day', this)">DAWN</button>
                 <button class="world-btn" onclick="selectWorld('afternoon', this)">NOON</button>
                 <button class="world-btn" onclick="selectWorld('evening', this)">DUSK</button>
             </div>
 
-            <div style="margin-bottom: 40px;">
-                <div style="width:120px; height:120px; background:white; border-radius:35px; display:flex; align-items:center; justify-content:center; border:6px solid var(--accent); box-shadow: 0 12px 25px rgba(0,0,0,0.4);">
-                    <img src="cat.png" style="width:85px;">
-                </div>
+            <div class="grid-label">CHOOSE YOUR CAT</div>
+            <div class="selection-grid">
+                <div class="cat-option selected" onclick="selectCat('cat.png', this)"><img src="cat.png" alt="Cat 1"></div>
+                <div class="cat-option" onclick="selectCat('cat2.png', this)"><img src="cat2.png" alt="Cat 2"></div>
+                <div class="cat-option" onclick="selectCat('cat3.png', this)"><img src="cat3.png" alt="Cat 3"></div>
             </div>
 
             <button class="action-btn" id="start-trigger">START</button>
@@ -89,19 +100,16 @@
 
         <div id="end-overlay" class="overlay">
             <h1 class="end-title">CAUGHT!</h1>
-            <p class="end-quote">"Time spent with cats is never wasted."</p>
             <div id="final-stats" class="final-stars">0</div>
+            <p style="color: white; opacity: 0.8; margin-bottom: 10px;">STARS COLLECTED</p>
             <button class="action-btn" onclick="resetToMenu()">RETRY</button>
         </div>
     </div>
 
 <script>
 const CONFIG = { 
-    gravity: 0.46, 
-    jump: -8.3, 
-    maxVol: 0.5, 
-    minSpacing: 480, 
-    magnetRange: 420 
+    gravity: 0.46, jump: -8.3, maxVol: 0.5, 
+    minSpacing: 480, magnetRange: 420 
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -129,13 +137,24 @@ let W, H, gameState = 'MENU', starsCount = 0, consecutiveStars = 0, frames = 0, 
 let catY, catV = 0, catX = 160, paws = [], stars = [], fishes = [], particles = [], roll = 0;
 let activePower = null, pTimer = 0;
 
-function resize() { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; catY = H/2; }
+function resize() { 
+    W = window.innerWidth; H = window.innerHeight; 
+    canvas.width = W; canvas.height = H; 
+    catY = H/2; 
+    catX = Math.min(W * 0.25, 160); // Adjust cat position for very small screens
+}
 window.addEventListener('resize', resize); resize();
 
 window.selectWorld = (id, el) => {
     document.querySelectorAll('.world-btn').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
     bgLayer.style.backgroundImage = `url('${assets[id].src}')`;
+};
+
+window.selectCat = (src, el) => {
+    document.querySelectorAll('.cat-option').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    assets.cat.src = src;
 };
 
 function update() {
@@ -146,9 +165,8 @@ function update() {
     let baseSpeed = (W * 0.005 + (starsCount * 0.008));
     let worldSpeed = (activePower === 'SLOW') ? baseSpeed * 0.5 : baseSpeed;
 
-    // Spawn Logic with 180-250px Gap
     if (paws.length === 0 || (W - paws[paws.length-1].x) > CONFIG.minSpacing) {
-        let currentGap = Math.floor(Math.random() * 71) + 180; 
+        let currentGap = Math.floor(Math.random() * 70) + 190; 
         let h = Math.random() * (H - (currentGap + 200)) + 100; 
         paws.push({ x: W + 100, yT: h, yB: h + currentGap });
 
@@ -161,10 +179,9 @@ function update() {
         }
     }
 
-    // Paws & Collision
     paws.forEach((p, i) => { 
         p.x -= worldSpeed;
-        if (catX+25 > p.x+175 && catX-25 < p.x+225 && (catY-25 < p.yT || catY+25 > p.yB)) {
+        if (catX+22 > p.x+155 && catX-22 < p.x+245 && (catY-22 < p.yT || catY+22 > p.yB)) {
             if (activePower === 'SHIELD') {
                 activePower = null; pTimer = 0;
                 createBurst(catX, catY, "white", 20);
@@ -174,7 +191,6 @@ function update() {
         if (p.x < -450) paws.splice(i, 1);
     });
 
-    // Stars
     stars.forEach((s, i) => {
         s.x -= worldSpeed;
         let dx = catX - s.x, dy = catY - s.y, dist = Math.sqrt(dx*dx + dy*dy);
@@ -186,26 +202,28 @@ function update() {
             s.collected = true;
             let gain = (s.type === 'blue' ? 2 : 1);
             starsCount += gain; consecutiveStars += gain;
+            if (consecutiveStars > 0 && consecutiveStars % 5 === 0) showSplash(consecutiveStars + " STREAK!");
             updateUI();
             handleMusicProgression();
             createBurst(s.x, s.y, s.type === 'blue' ? '#00F2FF' : 'gold', 10);
             if (starsCount % 10 === 0 && starsCount > 0) fishPending = true;
+            stars.splice(i, 1);
         }
-        if (!s.collected && s.x < -50) { consecutiveStars = 0; stars.splice(i, 1); }
+        if (s.x < -50) { if (!s.collected) consecutiveStars = 0; stars.splice(i, 1); }
     });
 
     fishes.forEach((f, i) => {
         f.x -= worldSpeed; f.bob = Math.sin((frames - f.spawnFrame) * 0.1) * 15;
         if (!f.collected && Math.sqrt((catX-f.x)**2 + (catY-(f.y+f.bob))**2) < 70) {
-            f.collected = true; triggerPowerUp();
+            f.collected = true; triggerPowerUp(); fishes.splice(i, 1);
         }
-        if (!f.collected && f.x < -50) { consecutiveStars = 0; fishes.splice(i, 1); }
+        if (f.x < -50) fishes.splice(i, 1);
     });
 
     particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; if(p.life <= 0) particles.splice(i, 1); });
     catV += CONFIG.gravity; catY += catV;
     if (catY > H || catY < 0) gameOver();
-    roll += (activePower ? 0.08 : 0.04); 
+    roll += (activePower ? 0.08 : 0.04);
 }
 
 function updateUI() {
@@ -218,18 +236,14 @@ function updateUI() {
 function triggerPowerUp() {
     let opts = ['SHIELD', 'MAGNET', 'SLOW'];
     activePower = opts[Math.floor(Math.random()*opts.length)];
-    pTimer = 600;
-    showSplash(activePower);
+    pTimer = 600; showSplash(activePower);
 }
 
 function handleMusicProgression() {
     let cycle = starsCount % 30;
     if (cycle === 28) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.2;
-    if (cycle === 29) tracks[currentTrackIdx].volume = CONFIG.maxVol * 0.05;
-    
     if (starsCount > 0 && cycle === 0) {
         tracks[currentTrackIdx].pause();
-        tracks[currentTrackIdx].currentTime = 0;
         currentTrackIdx = (currentTrackIdx + 1) % tracks.length;
         tracks[currentTrackIdx].volume = CONFIG.maxVol;
         tracks[currentTrackIdx].play().catch(() => {});
@@ -240,31 +254,34 @@ function draw() {
     ctx.clearRect(0,0,W,H);
     paws.forEach(p => {
         ctx.save();
-        if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
         ctx.translate(p.x + 200, p.yT); ctx.scale(1,-1); ctx.drawImage(assets.paw, -200, 0, 400, 650);
         ctx.restore();
         ctx.save();
-        if (activePower === 'SHIELD') ctx.globalAlpha = 0.3;
+        if (activePower === 'SHIELD') ctx.globalAlpha = 0.4;
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 650);
         ctx.restore();
     });
 
-    stars.forEach(s => { if(!s.collected) {
+    stars.forEach(s => {
         ctx.save(); ctx.translate(s.x, s.y);
         ctx.fillStyle = (s.type === 'blue' ? "#00F2FF" : "gold");
-        drawStar(0, 0, 5, 24, 12); ctx.restore();
-    }});
+        drawStar(0, 0, 5, 22, 11); ctx.restore();
+    });
 
-    fishes.forEach(f => { if(!f.collected) ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80); });
-    
+    fishes.forEach(f => ctx.drawImage(assets.fish, f.x-40, (f.y+f.bob)-40, 80, 80));
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.s, p.s); });
+
+    ctx.save(); 
+    ctx.translate(catX, catY); 
+    ctx.rotate(roll); 
     if (activePower) {
-        ctx.beginPath(); ctx.arc(catX, catY, 80, 0, Math.PI*2);
+        ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2);
         ctx.strokeStyle = activePower==='SHIELD'?'#FFF':activePower==='MAGNET'?'#FFD700':'#00F2FF';
         ctx.lineWidth = 6; ctx.stroke();
     }
-
-    ctx.save(); ctx.translate(catX, catY); ctx.rotate(roll); ctx.drawImage(assets.cat, -50, -50, 100, 100); ctx.restore();
-    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.s, p.s); });
+    ctx.drawImage(assets.cat, -45, -45, 90, 90); 
+    ctx.restore();
 }
 
 function createBurst(x, y, color, count) {
@@ -306,7 +323,13 @@ document.getElementById('start-trigger').onclick = () => {
     tracks[currentTrackIdx].play().catch(() => {});
 };
 
-window.addEventListener('touchstart', (e) => { if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; }}, {passive:false});
+window.addEventListener('touchstart', (e) => { 
+    if(gameState==='PLAY') { e.preventDefault(); catV = CONFIG.jump; }
+}, {passive:false});
+
+window.addEventListener('mousedown', () => {
+    if(gameState==='PLAY') { catV = CONFIG.jump; }
+});
 
 bgLayer.style.backgroundImage = `url('${assets.day.src}')`;
 function loop() { update(); draw(); requestAnimationFrame(loop); }

@@ -14,16 +14,20 @@
             --text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
+        /* RESET & BASE STYLES */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: rgba(0,0,0,0); 
             user-select: none;
+            outline: none;
         }
 
         body { 
             margin: 0; 
+            padding: 0;
             background: #000; 
             height: 100vh; 
+            width: 100vw;
             font-family: 'Gaegu', cursive; 
             overflow: hidden; 
             touch-action: none; 
@@ -32,6 +36,7 @@
             align-items: center; 
         }
         
+        /* GAME LAYOUT CONTAINERS */
         #game-container { 
             position: relative; 
             width: 100vw; 
@@ -42,136 +47,207 @@
 
         #bg-layer { 
             position: absolute; 
-            inset: 0; 
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-size: cover; 
             background-position: center; 
             z-index: 1; 
             opacity: 0.7; 
-            transition: 1.2s ease-in-out; 
+            transition: background-image 1.2s ease-in-out, opacity 1.2s; 
         }
 
         canvas { 
             position: absolute; 
-            inset: 0; 
+            top: 0;
+            left: 0;
             z-index: 5; 
             display: block; 
             width: 100%; 
             height: 100%; 
         }
         
-        /* --- UI TOP LAYER --- */
+        /* HEADS UP DISPLAY (HUD) */
         #ui-layer { 
             position: absolute; 
-            top: 30px; 
+            top: 40px; 
+            left: 0;
             width: 100%; 
             pointer-events: none; 
             z-index: 10; 
             display: none; 
             text-align: center; 
+            flex-direction: column;
+            align-items: center;
         }
 
         .score-text { 
             color: white; 
-            font-size: 60px; 
+            font-size: 72px; 
             margin: 0; 
+            padding: 0;
             text-shadow: var(--text-shadow); 
             letter-spacing: 2px; 
             line-height: 1;
+            font-weight: 700;
         }
 
         #power-indicator { 
             color: var(--gold); 
-            font-size: 20px; 
+            font-size: 22px; 
             text-transform: uppercase; 
-            margin-top: 5px; 
+            margin-top: 8px; 
             opacity: 0; 
-            transition: 0.4s; 
+            transition: opacity 0.4s, transform 0.4s; 
             text-shadow: 0 0 15px rgba(255,215,0,0.8); 
             font-weight: 700; 
+            letter-spacing: 1px;
         }
 
+        /* PROGRESS BAR STYLES */
         #progress-container { 
-            width: 180px; 
-            height: 12px; 
+            width: 200px; 
+            height: 14px; 
             background: rgba(255,255,255,0.1); 
             border-radius: 20px; 
             margin: 15px auto; 
             position: relative; 
             overflow: hidden; 
             border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         #progress-bar { 
             width: 0%; 
             height: 100%; 
-            background: linear-gradient(90deg, var(--blue), var(--gold)); 
+            /* REFINED: Golden Milestone Gradient */
+            background: linear-gradient(90deg, #FFD700 0%, #FFFACD 50%, #FFD700 100%); 
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
             transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
 
-        /* --- ADJUSTED OVERLAYS --- */
+        /* OVERLAYS (MENU & GAME OVER) */
         .overlay { 
             position: absolute; 
-            inset: 0; 
-            z-index: 20; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            background: rgba(0, 0, 0, 0.45); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px); 
+            background: rgba(0, 0, 0, 0.5); 
             padding: 20px; 
             text-align: center; 
+            transition: opacity 0.5s ease;
         }
 
-        h1 { color: white; font-size: 65px; margin: 0 0 5px 0; text-shadow: var(--text-shadow); }
-        h2 { color: white; font-size: 50px; margin: 0; text-shadow: var(--text-shadow); }
+        h1 { 
+            color: white; 
+            font-size: 80px; 
+            margin: 0 0 10px 0; 
+            text-shadow: var(--text-shadow); 
+            letter-spacing: -2px;
+        }
+
+        h2 { 
+            color: white; 
+            font-size: 60px; 
+            margin: 0; 
+            text-shadow: var(--text-shadow); 
+        }
         
         .quote-box { 
-            color: rgba(255,255,255,0.9); 
-            font-size: 22px; 
-            margin: 10px 0 20px 0; 
+            color: rgba(255,255,255,0.85); 
+            font-size: 24px; 
+            margin: 15px 0 25px 0; 
             font-style: italic; 
             text-shadow: var(--text-shadow);
-            max-width: 320px;
+            max-width: 350px;
+            line-height: 1.3;
         }
 
         .choice-btn { 
-            padding: 10px 20px; 
-            border: 1.5px solid rgba(255,255,255,0.3); 
-            background: rgba(255,255,255,0.1); 
+            padding: 12px 24px; 
+            border: 2px solid rgba(255,255,255,0.2); 
+            background: rgba(255,255,255,0.08); 
             color: white; 
-            border-radius: 12px; 
+            border-radius: 15px; 
             cursor: pointer; 
             font-family: inherit; 
-            font-size: 18px; 
-            transition: 0.3s; 
+            font-size: 20px; 
+            transition: all 0.3s ease; 
         }
 
         .choice-btn.active { 
             border-color: var(--gold); 
             background: rgba(255, 215, 0, 0.25); 
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
         }
         
         .cat-btn { 
-            width: 85px; height: 85px; border-radius: 50%; border: 2.5px solid transparent; 
-            transition: 0.4s; padding: 10px; background: rgba(255,255,255,0.1); 
-            overflow: hidden; display: flex; align-items: center; justify-content: center; 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            border: 3px solid transparent; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            padding: 12px; 
+            background: rgba(255,255,255,0.1); 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
         }
-        .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
-        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.2); }
+
+        .cat-btn img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+        }
+
+        .cat-btn.active { 
+            border-color: var(--gold); 
+            background: rgba(255, 215, 0, 0.2); 
+            transform: scale(1.1);
+        }
 
         .action-btn { 
-            display: inline-flex; align-items: center; justify-content: center; 
-            padding: 14px 40px; font-size: 24px; border-radius: 50px; border: none; 
-            font-family: inherit; cursor: pointer; background: white; color: #111; 
-            margin-top: 25px; transition: 0.2s; font-weight: 700; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5); 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 16px 50px; 
+            font-size: 28px; 
+            border-radius: 60px; 
+            border: none; 
+            font-family: inherit; 
+            cursor: pointer; 
+            background: white; 
+            color: #111; 
+            margin-top: 30px; 
+            transition: all 0.2s ease; 
+            font-weight: 700; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6); 
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
         }
 
         #hi-score-box { 
-            background: rgba(0,0,0,0.6); padding: 8px 30px; border-radius: 30px; 
-            color: var(--gold); font-size: 20px; margin-top: 15px; border: 1px solid rgba(255,215,0,0.3); 
+            background: rgba(0,0,0,0.6); 
+            padding: 10px 35px; 
+            border-radius: 40px; 
+            color: var(--gold); 
+            font-size: 22px; 
+            margin-top: 20px; 
+            border: 1px solid rgba(255,215,0,0.3); 
+            letter-spacing: 1px;
         }
 
         #end-overlay { display: none; }
@@ -181,41 +257,55 @@
 <body>
     <div id="game-container">
         <div id="bg-layer"></div>
+        
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
-            <div id="progress-container"><div id="progress-bar"></div></div>
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
             <div id="power-indicator">SHIELD ACTIVE</div>
         </div>
+
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
-            <p style="color:white; text-transform:uppercase; letter-spacing:1.5px; font-size: 14px; margin-bottom: 15px; opacity: 0.8;">Select Realm</p>
-            <div style="display:flex; gap:10px; margin-bottom: 25px;" id="world-select">
+            <p style="color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:2px; font-size: 14px; margin-bottom: 20px;">Select Your Realm</p>
+            
+            <div style="display:flex; gap:12px; margin-bottom: 30px;" id="world-select">
                 <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
                 <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
                 <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
             </div>
-            <div style="display:flex; gap:20px;" id="cat-select">
-                <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
-                <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
-                <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
+
+            <p style="color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:2px; font-size: 14px; margin-bottom: 20px;">Select Your Cat</p>
+            <div style="display:flex; gap:25px;" id="cat-select">
+                <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)">
+                    <img src="cat.png" alt="Orange Cat">
+                </button>
+                <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)">
+                    <img src="cat_black.png" alt="Black Cat">
+                </button>
+                <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)">
+                    <img src="cat_tabby.png" alt="Tabby Cat">
+                </button>
             </div>
+
             <button class="action-btn" id="start-trigger">Start Session</button>
         </div>
 
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
-            <div class="quote-box">"Time spend with cats is never wasted"</div>
-            <div id="final-stats" style="font-size: 100px; color: white; line-height: 1; margin: 5px 0;">0</div>
+            <div class="quote-box">"Time spent with cats is never wasted"</div>
+            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1; margin: 5px 0; font-weight: 700;">0</div>
             <div id="hi-score-box">BEST SCORE: 0</div>
             <button class="action-btn" id="retry-trigger">More Bonding Time ❤️</button>
         </div>
     </div>
 
 <script>
-/** * PRODUCTIONS CONFIGURATIONS
- * Fixed as per requirements.
+/** * GAME CONFIGURATION 
+ * Explicitly defined constants for physics and balancing
  */
 const CONFIG = { 
     gravity: 1150, 
@@ -229,10 +319,11 @@ const CONFIG = {
     baseHitbox: 34 
 };
 
-/** * ASSET ENGINE
+/** * ASSET MANAGEMENT
  */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
 const assets = { 
     paw: new Image(), 
     fish: new Image(), 
@@ -251,19 +342,23 @@ const bgm = [
     new Audio('song2.mp3'), 
     new Audio('song3.mp3')
 ];
+
 bgm.forEach(track => { 
     track.loop = true; 
     track.volume = 0.4; 
 });
 
-/** * GLOBAL GAME STATE
+/** * DYNAMIC STATE VARIABLES
  */
 let W, H;
 let gameState = 'MENU';
 let starsCount = 0;
 let lastTime = performance.now();
-let catY, catV = 0, catX = 180, catRoll = 0;
+let catY, catV = 0;
+const catX = 180; 
+let catRoll = 0;
 let currentSongIdx = 0;
+
 let paws = [];
 let stars = [];
 let fishes = [];
@@ -273,10 +368,12 @@ let activePower = null;
 let pTimer = 0;
 let fishQueued = false;
 let shake = 0;
-let mouseX = 0, mouseY = 0;
+
+let mouseX = 0;
+let mouseY = 0;
 let hoverSpin = 0;
 
-/** * INITIALIZATION & EVENTS
+/** * INITIALIZATION & ENGINE EVENTS
  */
 function resize() { 
     W = window.innerWidth; 
@@ -285,6 +382,7 @@ function resize() {
     canvas.height = H; 
     catY = H / 2; 
 }
+
 window.addEventListener('resize', resize); 
 resize();
 
@@ -293,23 +391,28 @@ window.addEventListener('mousemove', (e) => {
     mouseY = e.clientY; 
 });
 
+/** * UI INTERACTION LOGIC
+ */
 function setWorld(imgSrc, btn) { 
-    document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active')); 
+    const buttons = document.querySelectorAll('#world-select .choice-btn');
+    buttons.forEach(b => b.classList.remove('active')); 
     btn.classList.add('active'); 
-    document.getElementById('bg-layer').style.backgroundImage = `url(${imgSrc})`; 
+    
+    const bgLayer = document.getElementById('bg-layer');
+    bgLayer.style.backgroundImage = `url(${imgSrc})`; 
 }
 
 function setCat(imgSrc, btn) { 
-    document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active')); 
+    const buttons = document.querySelectorAll('#cat-select .cat-btn');
+    buttons.forEach(b => b.classList.remove('active')); 
     btn.classList.add('active'); 
     assets.cat.src = imgSrc; 
 }
 
-/** * IMPACT EFFECTS
- * Clean shockwave without blue shatters.
+/** * VISUAL EFFECTS GENERATOR
  */
 function createStrongBurst(x, y) {
-    // High-speed main shockwave
+    // Primary shockwave
     bursts.push({ 
         x: x, 
         y: y, 
@@ -318,7 +421,7 @@ function createStrongBurst(x, y) {
         speed: 1200, 
         lw: 8 
     });
-    // Secondary trailing wave
+    // Inner echo wave
     bursts.push({ 
         x: x, 
         y: y, 
@@ -329,12 +432,12 @@ function createStrongBurst(x, y) {
     });
 }
 
-/** * CORE UPDATE LOGIC
+/** * MAIN GAME UPDATE LOOP
  */
 function update(dt) {
+    // 1. MENU ANIMATION LOGIC
     if (gameState !== 'PLAY') {
-        // Handle Menu hover rotation logic
-        let distToCat = Math.hypot(catX - mouseX, catY - mouseY);
+        const distToCat = Math.hypot(catX - mouseX, catY - mouseY);
         if (distToCat < 250) {
             hoverSpin += dt * 2.0 * (1 - distToCat / 250); 
         } else {
@@ -343,13 +446,15 @@ function update(dt) {
         return;
     }
 
-    // --- AUDIO TRANSITIONS ---
-    let currentTrack = bgm[currentSongIdx];
-    // Milestone fades
+    // 2. AUDIO MANAGEMENT & PROGRESSION
+    const currentTrack = bgm[currentSongIdx];
+    
+    // Smooth transition fade-out
     if ([28, 58, 88].includes(starsCount)) {
         currentTrack.volume = Math.max(0, currentTrack.volume - (dt * 0.45));
     }
-    // Track switches
+    
+    // Song switching at milestones
     if ([30, 60, 90].includes(starsCount) && currentSongIdx < 2) {
         if (!currentTrack.paused) {
             currentTrack.pause(); 
@@ -361,7 +466,7 @@ function update(dt) {
         }
     }
 
-    // --- HITBOX DEFINITION ---
+    // 3. PHYSICS & COLLISION BALANCING
     let hitSize = CONFIG.baseHitbox;
     if (activePower === 'SHIELD') {
         hitSize = 88; 
@@ -369,15 +474,16 @@ function update(dt) {
         hitSize = CONFIG.baseHitbox * 0.82; 
     }
 
-    // --- CAT MOVEMENT (SMOOTH ROLL) ---
-    catRoll += 1.2 * dt; 
+    // --- REFINEMENT: Cat Roll Speed Increased by 5% (Original 1.2 -> 1.26) ---
+    catRoll += 1.26 * dt; 
 
-    // --- SPEED & POWERUP TIMERS ---
+    // Calculate dynamic speed based on score
     let speed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount / 20) * CONFIG.speedInc), CONFIG.maxSpeed);
     if (activePower === 'SLOW') {
         speed *= 0.50;
     }
     
+    // Timer depletion for active power-ups
     if (pTimer > 0) { 
         pTimer -= dt; 
         if (pTimer <= 0) { 
@@ -386,16 +492,18 @@ function update(dt) {
         }
     }
     
+    // Screen shake decay
     if (shake > 0) {
         shake -= dt * 65;
     }
 
-    // --- PAW PHYSICS ---
+    // 4. OBSTACLE (PAW) LOGIC
     for (let i = paws.length - 1; i >= 0; i--) {
-        let p = paws[i]; 
+        const p = paws[i]; 
         p.x -= speed * dt;
         
-        let isOverlappingX = (catX + hitSize > p.x + 180) && (catX - hitSize < p.x + 220);
+        // Accurate Hitbox Checking
+        const isOverlappingX = (catX + hitSize > p.x + 180) && (catX - hitSize < p.x + 220);
         if (!p.hit && isOverlappingX) {
             if (catY - hitSize < p.yT || catY + hitSize > p.yB) {
                 if (activePower === 'SHIELD') { 
@@ -411,26 +519,30 @@ function update(dt) {
                 }
             }
         }
+        
+        // Remove off-screen obstacles
         if (p.x < -500) {
             paws.splice(i, 1);
         }
     }
 
-    // --- STAR PHYSICS ---
+    // 5. COLLECTIBLE (STAR) LOGIC
     for (let i = stars.length - 1; i >= 0; i--) {
-        let s = stars[i]; 
+        const s = stars[i]; 
         s.x -= speed * dt;
         
-        let distToStar = Math.hypot(catX - s.x, catY - s.y);
+        const distToStar = Math.hypot(catX - s.x, catY - s.y);
         
+        // Magnet Powerup Attraction
         if (activePower === 'MAGNET' && distToStar < CONFIG.magnetRange) {
-            let angle = Math.atan2(catY - s.y, catX - s.x);
+            const angle = Math.atan2(catY - s.y, catX - s.x);
             s.x += Math.cos(angle) * 330 * dt; 
             s.y += Math.sin(angle) * 330 * dt;
         }
         
         s.rot += dt * 3.5;
         
+        // Collection Detection
         if (distToStar < 85) {
             starsCount += (s.type === 'BLUE' ? 2 : 1);
             if (starsCount > 0 && starsCount % 10 === 0) {
@@ -443,12 +555,12 @@ function update(dt) {
         }
     }
 
-    // --- FISH PHYSICS ---
+    // 6. POWER-UP (FISH) LOGIC
     for (let i = fishes.length - 1; i >= 0; i--) {
-        let f = fishes[i]; 
+        const f = fishes[i]; 
         f.x -= speed * dt; 
         f.t += dt;
-        let fishY = f.y + Math.sin(f.t * 6) * 25;
+        const fishY = f.y + Math.sin(f.t * 6) * 25;
         
         if (Math.hypot(catX - f.x, catY - fishY) < 90) {
             assignPowerUp(); 
@@ -458,46 +570,51 @@ function update(dt) {
         }
     }
 
-    // --- SPAWNING ENGINE ---
+    // 7. SPAWNING ENGINE (With visibility leads)
     if (paws.length === 0 || (W - paws[paws.length - 1].x) > 780) {
-        let h = Math.random() * (H - 520) + 160;
-        let gap = (starsCount < 15) ? 275 : (Math.random() * 65 + 195);
+        const h = Math.random() * (H - 520) + 160;
+        const gap = (starsCount < 15) ? 275 : (Math.random() * 65 + 195);
         paws.push({ x: W + 250, yT: h, yB: h + gap, hit: false });
         
+        // --- REFINEMENT: Layering fix - Spawning items further ahead to be visible between paws ---
+        const spawnX = W + 650; 
+        const spawnY = h + (gap / 2);
+
         if (fishQueued) { 
-            fishes.push({ x: W + 600, y: h + (gap / 2), t: 0 }); 
+            fishes.push({ x: spawnX, y: spawnY, t: 0 }); 
             fishQueued = false; 
         } else { 
             stars.push({ 
-                x: W + 600, 
-                y: h + (gap / 2), 
+                x: spawnX, 
+                y: spawnY, 
                 type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', 
                 rot: 0 
             }); 
         }
     }
 
-    // --- VFX UPDATE ---
+    // 8. VFX AGING
     for (let i = bursts.length - 1; i >= 0; i--) {
-        let b = bursts[i];
+        const b = bursts[i];
         b.r += b.speed * dt; 
         b.a -= 2.2 * dt; 
         if (b.a <= 0) bursts.splice(i, 1);
     }
 
-    // --- GRAVITY ---
+    // 9. CAT VERTICAL PHYSICS
     catV += CONFIG.gravity * dt; 
     catY += catV * dt;
     
+    // Bounds Checking
     if (catY > H || catY < 0) {
         gameOver();
     }
 }
 
-/** * POWERUP LOGIC
+/** * POWERUP RANDOMIZATION LOGIC
  */
 function assignPowerUp() {
-    let pool = ['SHIELD', 'MAGNET']; 
+    const pool = ['SHIELD', 'MAGNET']; 
     if (starsCount >= 25) {
         pool.push('SLOW');
     }
@@ -511,6 +628,7 @@ function assignPowerUp() {
     lastPowerUps.push(choice); 
     if (lastPowerUps.length > 2) lastPowerUps.shift();
     
+    // Scaling duration based on score
     pTimer = Math.min(CONFIG.minPowerDur + Math.floor(starsCount / 25) * 2, CONFIG.maxPowerDur);
     
     const pInd = document.getElementById('power-indicator');
@@ -518,63 +636,71 @@ function assignPowerUp() {
     pInd.style.opacity = 1;
 }
 
-/** * DRAWING ENGINE
+/** * MAIN DRAWING ENGINE
  */
 function draw() {
     ctx.save(); 
+    // Handle Screen Shake
     if (shake > 0) {
         ctx.translate(Math.random() * shake - shake / 2, Math.random() * shake - shake / 2);
     }
     ctx.clearRect(0, 0, W, H);
     
-    // Draw Paws
+    // LAYER 1: Paws (Background Obstacles)
     paws.forEach(p => {
         ctx.save(); 
         if (activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.5;
-        // Bottom Paw
+        
+        // Bottom Paw Rendering
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 800);
-        // Top Paw (Mirrored)
+        
+        // Top Paw Rendering (Vertical Mirror)
         ctx.translate(p.x + 200, p.yT); 
         ctx.scale(1, -1); 
         ctx.drawImage(assets.paw, -200, 0, 400, 800); 
         ctx.restore();
     });
 
-    // Draw Stars
+    // LAYER 2: Stars (With refined glow for visibility)
     stars.forEach(s => {
-        let col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
+        const col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
         ctx.save(); 
-        ctx.shadowBlur = 15; 
-        ctx.shadowColor = col;
+        ctx.shadowBlur = 20; 
+        ctx.shadowColor = "white"; // REFINEMENT: White glow for high contrast against dark paws
         ctx.translate(s.x, s.y); 
         ctx.rotate(s.rot); 
         ctx.fillStyle = col; 
         ctx.beginPath();
         for (let i = 0; i < 10; i++) { 
-            let r = i % 2 == 0 ? 20 : 10; 
+            const r = i % 2 == 0 ? 22 : 10; 
             ctx.lineTo(Math.cos(i * Math.PI / 5) * r, Math.sin(i * Math.PI / 5) * r); 
         }
         ctx.fill(); 
         ctx.restore();
     });
 
-    // Draw Fishes
+    // LAYER 3: Fishes
     fishes.forEach(f => {
         ctx.save(); 
         ctx.shadowBlur = 25; 
         ctx.shadowColor = "#FFB7B7";
-        let fishY = f.y + Math.sin(f.t * 6) * 25;
+        const fishY = f.y + Math.sin(f.t * 6) * 25;
         ctx.drawImage(assets.fish, f.x - 40, fishY - 40, 80, 80); 
         ctx.restore();
     });
 
-    // Draw Shield/Field Effects
+    // LAYER 4: Active Power Aura
     if (activePower) {
         ctx.save();
-        let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
+        const colors = {
+            'SHIELD': '255,255,255',
+            'MAGNET': '255,215,0',
+            'SLOW': '0,242,255'
+        };
+        const col = colors[activePower];
         ctx.translate(catX, catY); 
         ctx.globalCompositeOperation = 'screen';
-        let grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 120);
+        const grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 120);
         grad.addColorStop(0, `rgba(${col}, 0)`); 
         grad.addColorStop(0.8, `rgba(${col}, 0.4)`); 
         grad.addColorStop(1, `rgba(${col}, 0)`);
@@ -585,7 +711,7 @@ function draw() {
         ctx.restore();
     }
 
-    // Draw Burst Shockwaves
+    // LAYER 5: VFX Shockwaves
     bursts.forEach(b => {
         ctx.save(); 
         ctx.strokeStyle = `rgba(255,255,255,${b.a})`; 
@@ -596,56 +722,77 @@ function draw() {
         ctx.restore();
     });
 
-    // Draw The Cat
+    // LAYER 6: The Cat (Top Game Object)
     ctx.save(); 
     ctx.translate(catX, catY); 
-    // Combine base roll and menu hover spin
     ctx.rotate(catRoll + hoverSpin); 
-    ctx.drawImage(assets.cat, -50, -50, 100, 100); 
+    ctx.drawImage(assets.cat, -55, -55, 110, 110); // Slightly larger for better detail
     ctx.restore();
     
     ctx.restore();
 }
 
-/** * UI UPDATES
+/** * UI UPDATE LOGIC
  */
 function updateUI() { 
     document.getElementById('star-display').innerText = starsCount; 
+    
+    // Progress bar math (loops every 10 points)
     let progressPercent = (starsCount % 10) * 10;
-    if (progressPercent === 0 && starsCount > 0) progressPercent = 100;
-    document.getElementById('progress-bar').style.width = progressPercent + "%";
+    if (progressPercent === 0 && starsCount > 0) {
+        progressPercent = 100;
+    }
+    
+    const progressBar = document.getElementById('progress-bar');
+    progressBar.style.width = progressPercent + "%";
 }
 
+/** * GAME OVER SEQUENCE
+ */
 function gameOver() {
     gameState = 'OVER'; 
-    bgm.forEach(t => t.pause());
+    bgm.forEach(track => track.pause());
+    
+    // Hi-Score Management
     const best = parseInt(localStorage.getItem('hi_score_caught') || 0);
     if (starsCount > best) {
         localStorage.setItem('hi_score_caught', starsCount);
     }
+    
     document.getElementById('final-stats').innerText = starsCount;
     document.getElementById('hi-score-box').innerText = "BEST SCORE: " + Math.max(best, starsCount);
+    
+    // Visibility toggle
     document.getElementById('end-overlay').classList.add('visible');
     document.getElementById('ui-layer').style.display = 'none';
 }
 
-/** * INPUT HANDLING
+/** * INPUT HANDLING & START CONTROLS
  */
 document.getElementById('start-trigger').onclick = () => { 
     bgm[0].play(); 
     sfxMeow.play(); 
     gameState = 'PLAY'; 
-    document.getElementById('menu-overlay').style.display = 'none'; 
-    document.getElementById('ui-layer').style.display = 'block'; 
+    
+    document.getElementById('menu-overlay').style.opacity = 0;
+    setTimeout(() => {
+        document.getElementById('menu-overlay').style.display = 'none';
+        document.getElementById('ui-layer').style.display = 'flex'; 
+    }, 500);
+    
     updateUI();
 };
 
 document.getElementById('retry-trigger').onclick = () => {
+    // Smooth reload
     location.reload();
 };
 
-window.addEventListener('mousedown', () => { 
-    if (gameState === 'PLAY') catV = CONFIG.jump; 
+// Handle Jump (Mouse & Touch)
+window.addEventListener('mousedown', (e) => { 
+    if (gameState === 'PLAY' && e.button === 0) {
+        catV = CONFIG.jump; 
+    }
 });
 
 window.addEventListener('touchstart', (e) => { 
@@ -655,18 +802,24 @@ window.addEventListener('touchstart', (e) => {
     } 
 }, { passive: false });
 
-/** * MAIN LOOP
+/** * MAIN ANIMATION LOOP
  */
 function loop(t) { 
-    let dt = (t - lastTime) / 1000; 
+    // Calculate Delta Time
+    const dt = (t - lastTime) / 1000; 
     lastTime = t; 
+    
+    // Cap DT to prevent physics glitches on tab switch
     update(Math.min(dt, 0.1)); 
     draw(); 
+    
     requestAnimationFrame(loop); 
 }
 
-// Set initial background
+// Set initial visual state
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
+
+// Boot the Engine
 requestAnimationFrame(loop);
 </script>
 </body>

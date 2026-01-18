@@ -7,63 +7,180 @@
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --gold: #FFD700; --blue: #00F2FF; --accent: #FFB7B7; 
-            --light-glass: rgba(255, 255, 255, 0.15); --text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            --gold: #FFD700; 
+            --blue: #00F2FF; 
+            --accent: #FFB7B7; 
+            --light-glass: rgba(255, 255, 255, 0.15); 
+            --text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
-        body { margin: 0; background: #000; height: 100vh; font-family: 'Gaegu', cursive; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: rgba(0,0,0,0); 
+            user-select: none;
+        }
+
+        body { 
+            margin: 0; 
+            background: #000; 
+            height: 100vh; 
+            font-family: 'Gaegu', cursive; 
+            overflow: hidden; 
+            touch-action: none; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
         
-        #game-container { position: relative; width: 100vw; height: 100vh; background: #050505; overflow: hidden; }
+        #game-container { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            background: #050505; 
+            overflow: hidden; 
+        }
+
+        #bg-layer { 
+            position: absolute; 
+            inset: 0; 
+            background-size: cover; 
+            background-position: center; 
+            z-index: 1; 
+            opacity: 0.7; 
+            transition: 1.2s ease-in-out; 
+        }
+
+        canvas { 
+            position: absolute; 
+            inset: 0; 
+            z-index: 5; 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
         
-        /* Background Layer with 70% Transparency effect over black */
-        #bg-layer { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; opacity: 0.7; transition: 1.2s ease-in-out; }
+        /* --- UI ELEMENTS --- */
+        #ui-layer { 
+            position: absolute; 
+            top: 30px; 
+            width: 100%; 
+            pointer-events: none; 
+            z-index: 10; 
+            display: none; 
+            text-align: center; 
+        }
+
+        .score-text { 
+            color: white; 
+            font-size: 65px; 
+            margin: 0; 
+            text-shadow: var(--text-shadow); 
+            letter-spacing: 2px; 
+        }
+
+        #power-indicator { 
+            color: var(--gold); 
+            font-size: 24px; 
+            text-transform: uppercase; 
+            margin-top: 5px; 
+            opacity: 0; 
+            transition: 0.4s; 
+            text-shadow: 0 0 15px rgba(255,215,0,0.8); 
+            font-weight: 700; 
+        }
+
+        #milestone-text { 
+            position: absolute; 
+            top: 120px; 
+            width: 100%; 
+            color: var(--blue); 
+            font-size: 32px; 
+            font-weight: 700; 
+            opacity: 0; 
+            transition: opacity 0.5s, transform 0.5s; 
+            transform: translateY(20px);
+            text-shadow: var(--text-shadow); 
+            text-align: center; 
+            z-index: 10; 
+        }
+
+        #milestone-text.visible {
+            opacity: 1;
+            transform: translateY(0px);
+        }
+
+        /* --- OVERLAYS --- */
+        .overlay { 
+            position: absolute; 
+            inset: 0; 
+            z-index: 20; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            background: var(--light-glass); 
+            padding: 20px; 
+            text-align: center; 
+        }
+
+        h1 { color: white; font-size: 70px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
+        h2 { color: white; font-size: 55px; margin: 0; text-shadow: var(--text-shadow); }
+        .quote { color: rgba(255,255,255,0.9); font-size: 24px; margin: 15px 0; font-style: italic; text-shadow: var(--text-shadow); }
         
-        canvas { position: absolute; inset: 0; z-index: 5; display: block; width: 100%; height: 100%; }
+        .selection-label { color: rgba(255,255,255,0.9); font-size: 20px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
         
-        /* UI Layer */
-        #ui-layer { position: absolute; top: 30px; width: 100%; pointer-events: none; z-index: 10; display: none; text-align: center; }
-        .score-text { color: white; font-size: 55px; margin: 0; text-shadow: var(--text-shadow); letter-spacing: 2px; }
-        #power-indicator { color: var(--gold); font-size: 24px; text-transform: uppercase; margin-top: 5px; opacity: 0; transition: 0.4s; text-shadow: 0 0 15px rgba(255,215,0,0.8); font-weight: 700; }
+        .choice-btn { 
+            padding: 12px 24px; 
+            border: 2px solid rgba(255,255,255,0.4); 
+            background: rgba(0,0,0,0.2); 
+            color: white; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            font-family: inherit; 
+            font-size: 20px; 
+            transition: 0.3s; 
+        }
+        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: translateY(-3px); }
         
-        /* Overlays */
-        .overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: var(--light-glass); padding: 20px; text-align: center; }
+        .cat-btn { 
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%; 
+            border: 3px solid transparent; 
+            transition: 0.4s; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.1); 
+            overflow: hidden; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cat-btn img { width: 100%; height: 100%; object-fit: contain; transition: 0.5s; }
+        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: scale(1.1); }
         
-        h1 { color: white; font-size: 65px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
-        h2 { color: white; font-size: 48px; margin: 0; text-shadow: var(--text-shadow); }
-        .quote { color: rgba(255,255,255,0.9); font-size: 22px; margin: 10px 0; font-style: italic; text-shadow: var(--text-shadow); }
-        
-        .selection-label { color: rgba(255,255,255,0.9); font-size: 18px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
-        .choice-btn { padding: 10px 20px; border: 1.5px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.2); color: white; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 18px; transition: 0.3s; }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: translateY(-2px); }
-        
-        /* Interactive Menu Cats */
-        .cat-btn { width: 95px; height: 95px; border-radius: 50%; border: 2px solid transparent; transition: 0.4s; padding: 8px; background: rgba(255,255,255,0.1); overflow: hidden; }
-        .cat-btn img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .cat-btn:hover img { transform: rotate(360deg); }
-        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: scale(1.08); }
-        
-        /* Buttons */
         .action-btn { 
             display: inline-flex; 
             align-items: center; 
             justify-content: center; 
             white-space: nowrap; 
-            gap: 10px; 
-            padding: 14px 45px; 
-            font-size: 26px; 
+            padding: 16px 50px; 
+            font-size: 28px; 
             border-radius: 50px; 
             border: none; 
             font-family: inherit; 
             cursor: pointer; 
             background: white; 
             color: #111; 
-            margin-top: 25px; 
+            margin-top: 30px; 
             transition: 0.3s; 
             font-weight: 700; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
         }
-        #hi-score-box { background: rgba(0,0,0,0.6); padding: 8px 30px; border-radius: 30px; color: var(--gold); font-size: 20px; margin-top: 15px; border: 1px solid rgba(255,215,0,0.2); }
-        
+        .action-btn:hover { transform: scale(1.05); background: var(--gold); }
+
+        #hi-score-box { background: rgba(0,0,0,0.6); padding: 10px 35px; border-radius: 30px; color: var(--gold); font-size: 22px; margin-top: 20px; border: 1px solid rgba(255,215,0,0.3); }
         #end-overlay { display: none; }
         #end-overlay.visible { display: flex; }
     </style>
@@ -73,20 +190,21 @@
         <div id="bg-layer"></div>
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
-            <div id="power-indicator">POWER ACTIVE</div>
+            <div id="power-indicator">SHIELD ACTIVE</div>
+            <div id="milestone-text">30 POINTS REACHED!</div>
         </div>
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
             <p class="selection-label">Select Realm</p>
-            <div style="display:flex; gap:12px; margin-bottom: 25px;" id="world-select">
+            <div style="display:flex; gap:15px; margin-bottom: 30px;" id="world-select">
                 <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
                 <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
                 <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
             </div>
             <p class="selection-label">Select Companion</p>
-            <div style="display:flex; gap:15px;" id="cat-select">
+            <div style="display:flex; gap:20px;" id="cat-select">
                 <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
                 <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
                 <button class="choice-btn cat-btn" onclick="setCat('cat_tabby.png', this)"><img src="cat_tabby.png"></button>
@@ -97,43 +215,41 @@
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
             <div class="quote">"Time spent with cats is never wasted."</div>
-            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.3); margin: 15px 0;">0</div>
+            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.3); margin: 20px 0;">0</div>
             <div id="hi-score-box">BEST SCORE: 0</div>
             <button class="action-btn" id="retry-trigger">More Bonding Time ❤️</button>
         </div>
     </div>
 
 <script>
-/** * FULL GAME LOGIC 
- */
+/** ***************************************************
+ * GAME CONFIGURATION
+ *****************************************************/
 const CONFIG = { 
     gravity: 1080, 
     jump: -390, 
-    startSpeed: 230, 
-    maxSpeed: 450,
-    speedInc: 18,
-    minDur: 8, 
-    maxDur: 14, 
+    startSpeed: 240, 
+    maxSpeed: 480,
+    speedInc: 15,
+    minPowerDur: 8, 
+    maxPowerDur: 14, 
     magnetRange: 420,
-    baseHitbox: 34, // Standard collision radius
-    bubbleBuffer: 0.68 // Reduced hitbox (32% smaller) when powerup is active
+    baseHitbox: 34,
+    bubbleBuffer: 0.65 
 };
 
+/** ***************************************************
+ * ASSETS & GLOBAL STATE
+ *****************************************************/
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const assets = { 
-    paw: new Image(), 
-    fish: new Image(), 
-    cat: new Image() 
-};
+const assets = { paw: new Image(), fish: new Image(), cat: new Image() };
 assets.paw.src = 'paw.png'; 
 assets.fish.src = 'fish.png'; 
 assets.cat.src = 'cat.png';
 
-const sfxMeow = new Audio('meow.mp3'); 
-sfxMeow.volume = 0.2;
-
+const sfxMeow = new Audio('meow.mp3'); sfxMeow.volume = 0.2;
 const bgm = [new Audio('song1.mp3'), new Audio('song2.mp3'), new Audio('song3.mp3')];
 bgm.forEach(t => { t.loop = true; t.volume = 0.4; });
 
@@ -141,7 +257,11 @@ let W, H, gameState = 'MENU', starsCount = 0, lastTime = performance.now();
 let catY, catV = 0, catX = 180, catRoll = 0, currentSongIdx = 0;
 let paws = [], stars = [], fishes = [], particles = [], bursts = [], lastPowerUps = [];
 let activePower = null, pTimer = 0, fishQueued = false, shake = 0;
+let mouseX = 0, mouseY = 0, hoverSpin = 0;
 
+/** ***************************************************
+ * INITIALIZATION & INPUT
+ *****************************************************/
 function resize() { 
     W = window.innerWidth; 
     H = window.innerHeight; 
@@ -149,8 +269,12 @@ function resize() {
     canvas.height = H; 
     catY = H/2; 
 }
-window.addEventListener('resize', resize); 
-resize();
+window.addEventListener('resize', resize); resize();
+
+window.addEventListener('mousemove', (e) => { 
+    mouseX = e.clientX; 
+    mouseY = e.clientY; 
+});
 
 function setWorld(s, e) { 
     document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
@@ -164,173 +288,193 @@ function setCat(s, e) {
     assets.cat.src = s;
 }
 
-/** * VFX: Shatter Particles 
- */
-function createShatter(x, y, color) {
-    for (let i = 0; i < 15; i++) {
-        particles.push({
-            x: x, 
-            y: y, 
-            vx: (Math.random() - 0.5) * 400, 
-            vy: (Math.random() - 0.5) * 400,
-            life: 1.0, 
-            size: Math.random() * 8 + 4,
-            color: color || '#FFF'
-        });
+/** ***************************************************
+ * CORE LOGIC: POWER-UPS & MILESTONES
+ *****************************************************/
+function handleMilestones() {
+    // Check for every 10 points
+    if (starsCount > 0 && starsCount % 10 === 0) {
+        fishQueued = true; // Ensures the next paw set has a fish
+        
+        // Show milestone text
+        const mText = document.getElementById('milestone-text');
+        mText.innerText = `${starsCount} POINTS REACHED!`;
+        mText.classList.add('visible');
+        setTimeout(() => mText.classList.remove('visible'), 2500);
     }
 }
 
-/** * CORE UPDATE LOOP 
- */
+function assignPowerUp() {
+    let pool = ['SHIELD', 'MAGNET'];
+    
+    // Logic: Only allow SLOW after 25 points
+    if (starsCount >= 25) {
+        pool.push('SLOW');
+    }
+
+    // Logic: Random selection with repetition constraint (max 2 in a row)
+    let choice;
+    let attempts = 0;
+    
+    do {
+        choice = pool[Math.floor(Math.random() * pool.length)];
+        attempts++;
+    } while (
+        lastPowerUps.length >= 2 && 
+        lastPowerUps[0] === choice && 
+        lastPowerUps[1] === choice && 
+        attempts < 10
+    );
+
+    activePower = choice;
+    lastPowerUps.push(choice);
+    if (lastPowerUps.length > 2) lastPowerUps.shift();
+
+    // Scale duration with score
+    pTimer = Math.min(CONFIG.minPowerDur + Math.floor(starsCount/25)*2, CONFIG.maxPowerDur);
+    
+    const pInd = document.getElementById('power-indicator');
+    pInd.innerText = `${activePower} ACTIVE`;
+    pInd.style.opacity = 1;
+}
+
+/** ***************************************************
+ * CORE UPDATE LOOP
+ *****************************************************/
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
-    // --- AUDIO TRANSITION MACHINE ---
-    let track = bgm[currentSongIdx];
-    let scoreMod = starsCount % 30;
+    // --- BGM ENGINE: TRANSITIONS AT 28/30, 58/60, 88/90 ---
+    let currentTrack = bgm[currentSongIdx];
+    let fadePoints = [28, 58, 88];
+    let switchPoints = [30, 60, 90];
+
+    // Fade preceding track at 2 points before milestone
+    if (fadePoints.includes(starsCount)) {
+        // Linearly decrease volume over time during the "27 to 29" point window
+        currentTrack.volume = Math.max(0, currentTrack.volume - (dt * 0.35));
+    }
+
+    // Immediate swap at the milestone
+    if (switchPoints.includes(starsCount) && currentSongIdx < 2) {
+        if (!currentTrack.paused) {
+            currentTrack.pause();
+            currentTrack.currentTime = 0;
+            currentSongIdx++;
+            bgm[currentSongIdx].volume = 0.4;
+            bgm[currentSongIdx].play();
+        }
+    }
+
+    // --- INTERACTIVE SPIN MATH ---
+    let dx = catX - mouseX;
+    let dy = catY - mouseY;
+    let distToMouse = Math.sqrt(dx*dx + dy*dy);
     
-    // Smooth Fade out logic
-    if (starsCount > 0 && scoreMod >= 28) {
-        // Linearly decrease volume based on delta time
-        track.volume = Math.max(0, track.volume - (dt * 0.3)); 
+    // Cat spins faster as mouse approaches
+    if (distToMouse < 200) {
+        let intensity = (1 - distToMouse / 200);
+        hoverSpin += dt * 8 * intensity;
+    } else {
+        hoverSpin *= 0.96; // Friction to slow spin down
     }
 
-    // Precise Swap logic at point 30
-    if (starsCount > 0 && scoreMod === 0 && track.volume < 0.05) {
-        track.pause(); 
-        track.currentTime = 0;
-        currentSongIdx = (currentSongIdx + 1) % bgm.length;
-        bgm[currentSongIdx].volume = 0.4;
-        bgm[currentSongIdx].play();
-    }
-
-    // --- GAME PHYSICS & SPEED ---
+    // --- SPEED & POWER DURATION ---
     let speed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20) * CONFIG.speedInc), CONFIG.maxSpeed);
     if (activePower === 'SLOW') speed *= 0.55;
     
-    const pInd = document.getElementById('power-indicator');
     if (pTimer > 0) { 
         pTimer -= dt; 
-        pInd.style.opacity = 1; 
-        pInd.innerText = `${activePower} ACTIVE`;
         if (pTimer <= 0) { 
             activePower = null; 
-            pInd.style.opacity = 0; 
+            document.getElementById('power-indicator').style.opacity = 0; 
         }
     }
 
-    if (shake > 0) shake -= dt * 40;
+    if (shake > 0) shake -= dt * 50;
 
-    // --- OBSTACLE SPAWNING ---
-    if (paws.length === 0 || (W - paws[paws.length-1].x) > 680) {
-        let h = Math.random() * (H - 500) + 150;
-        let gap = (starsCount < 10) ? 250 : (Math.random() * 80 + 175);
-        paws.push({ x: W + 200, yT: h, yB: h + gap, hit: false });
+    // --- SPAWNING LOGIC ---
+    // Spawn new paws when the last set moves far enough
+    if (paws.length === 0 || (W - paws[paws.length-1].x) > 700) {
+        let h = Math.random() * (H - 520) + 160;
+        let gap = (starsCount < 15) ? 260 : (Math.random() * 70 + 180);
+        paws.push({ x: W + 250, yT: h, yB: h + gap, hit: false });
         
-        // Spawn Reward
+        // Ensure fish spawns immediately upon milestone
         if (fishQueued) { 
-            fishes.push({ x: W + 500, y: h + (gap/2), t: 0 }); 
+            fishes.push({ x: W + 600, y: h + (gap/2), t: 0 }); 
             fishQueued = false; 
         } else {
-            stars.push({ x: W + 500, y: h + (gap/2), type: Math.random() > 0.8 ? 'BLUE' : 'GOLD', rot: 0 });
+            // Random star spawn
+            stars.push({ x: W + 600, y: h + (gap/2), type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rot: 0 });
         }
     }
 
-    // --- COLLISION LOGIC: Expanded & Forgiving ---
-    // Use the power-up buffer to make the hitbox effectively smaller
-    let currentHitbox = activePower ? (CONFIG.baseHitbox * CONFIG.bubbleBuffer) : CONFIG.baseHitbox;
+    // --- COLLISION PHYSICS ---
+    let hitSize = activePower ? (CONFIG.baseHitbox * CONFIG.bubbleBuffer) : CONFIG.baseHitbox;
 
-    // Paw Obstacles
+    // Paw Collisions
     for (let i = paws.length - 1; i >= 0; i--) {
         let p = paws[i];
         p.x -= speed * dt;
         
-        // Horizontal Check: Cat is within the paw's width (paws are ~400px wide, centered at p.x+200)
-        let inXRange = (catX + currentHitbox > p.x + 185) && (catX - currentHitbox < p.x + 215);
-        
-        if (!p.hit && inXRange) {
-            // Vertical Check: Touching top paw or bottom paw
-            if (catY - currentHitbox < p.yT || catY + currentHitbox > p.yB) {
+        // Precision hitbox check
+        let isOverlappingX = (catX + hitSize > p.x + 180) && (catX - hitSize < p.x + 220);
+        if (!p.hit && isOverlappingX) {
+            if (catY - hitSize < p.yT || catY + hitSize > p.yB) {
                 if (activePower === 'SHIELD') { 
                     bursts.push({ x: catX, y: catY, r: 80, a: 1 });
-                    createShatter(catX, catY, '#FFF');
-                    shake = 15;
+                    shake = 20;
                     p.hit = true; 
                     activePower = null; 
                     pTimer = 0; 
+                    document.getElementById('power-indicator').style.opacity = 0;
                 } else { 
                     gameOver(); 
-                    return;
+                    return; 
                 }
             }
         }
-        if (p.x < -450) paws.splice(i, 1);
+        if (p.x < -500) paws.splice(i, 1);
     }
 
-    // Collectibles (Stars)
+    // Star Collection & Magnetism
     for (let i = stars.length - 1; i >= 0; i--) {
         let s = stars[i];
         s.x -= speed * dt; 
-        s.rot += dt * 2.5;
+        s.rot += dt * 3;
 
-        // Magnetism
         if (activePower === 'MAGNET' && Math.hypot(catX - s.x, catY - s.y) < CONFIG.magnetRange) {
-            let dx = catX - s.x;
-            let dy = catY - s.y;
-            let dist = Math.hypot(dx, dy);
-            s.x += (dx/dist) * 580 * dt; 
-            s.y += (dy/dist) * 580 * dt;
+            let angle = Math.atan2(catY - s.y, catX - s.x);
+            s.x += Math.cos(angle) * 650 * dt;
+            s.y += Math.sin(angle) * 650 * dt;
         }
 
-        // Collection check
         if (Math.hypot(catX - s.x, catY - s.y) < 85) {
             starsCount += (s.type === 'BLUE' ? 2 : 1);
-            if (starsCount % 10 === 0) fishQueued = true;
+            handleMilestones();
             stars.splice(i, 1); 
             updateUI();
-        } else if (s.x < -100) {
-            stars.splice(i, 1);
-        }
+        } else if (s.x < -150) stars.splice(i, 1);
     }
 
-    // Power-ups (Fish)
+    // Fish Collection
     for (let i = fishes.length - 1; i >= 0; i--) {
         let f = fishes[i];
         f.x -= speed * dt; 
         f.t += dt;
+        let floatingY = f.y + Math.sin(f.t * 6) * 25;
         
-        let floatY = f.y + Math.sin(f.t * 5) * 20;
-        if (Math.hypot(catX - f.x, catY - floatY) < 95) {
-            let pool = ['SHIELD', 'MAGNET'];
-            if (starsCount >= 25) pool.push('SLOW');
-            
-            // Repetition prevention
-            if (lastPowerUps.length >= 2 && lastPowerUps[0] === lastPowerUps[1]) {
-                pool = pool.filter(p => p !== lastPowerUps[0]);
-            }
-            
-            activePower = pool[Math.floor(Math.random() * pool.length)];
-            lastPowerUps.push(activePower);
-            if (lastPowerUps.length > 2) lastPowerUps.shift();
-            
-            pTimer = Math.min(CONFIG.minDur + Math.floor(starsCount/20)*2, CONFIG.maxDur);
+        if (Math.hypot(catX - f.x, catY - floatingY) < 95) {
+            assignPowerUp();
             fishes.splice(i, 1);
-        } else if (f.x < -100) {
-            fishes.splice(i, 1);
-        }
+        } else if (f.x < -150) fishes.splice(i, 1);
     }
 
-    // VFX Processing
-    particles.forEach((p, i) => { 
-        p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; 
-        if(p.life <= 0) particles.splice(i, 1); 
-    });
-    bursts.forEach((b, i) => { 
-        b.r += 350 * dt; b.a -= 1.8 * dt; 
-        if(b.a <= 0) bursts.splice(i, 1); 
-    });
+    // --- VFX UPDATE ---
+    bursts.forEach((b, i) => { b.r += 400 * dt; b.a -= 2 * dt; if(b.a <= 0) bursts.splice(i, 1); });
 
-    // --- MOVEMENT ---
+    // --- CAT PHYSICS ---
     catV += CONFIG.gravity * dt; 
     catY += catV * dt;
     catRoll += 3.5 * dt;
@@ -338,21 +482,19 @@ function update(dt) {
     if (catY > H || catY < 0) gameOver();
 }
 
-/** * RENDER ENGINE 
- */
+/** ***************************************************
+ * RENDER ENGINE
+ *****************************************************/
 function draw() {
     ctx.save();
-    // Screen Shake
     if (shake > 0) ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
     ctx.clearRect(0, 0, W, H);
     
-    // Draw Obstacles (Paws)
+    // Draw Paws
     paws.forEach(p => {
         ctx.save(); 
         if(activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.5;
-        // Bottom Paw
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 800);
-        // Top Paw (Inverted)
         ctx.translate(p.x + 200, p.yT); 
         ctx.scale(1, -1); 
         ctx.drawImage(assets.paw, -200, 0, 400, 800); 
@@ -363,74 +505,56 @@ function draw() {
     stars.forEach(s => {
         let col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
         ctx.save(); 
-        ctx.shadowBlur = 20; 
-        ctx.shadowColor = col;
+        ctx.shadowBlur = 20; ctx.shadowColor = col;
         ctx.translate(s.x, s.y); 
         ctx.rotate(s.rot);
         ctx.fillStyle = col; 
         ctx.beginPath();
         for(let i=0; i<10; i++) { 
-            let r = i % 2 === 0 ? 20 : 10; 
+            let r = i % 2 === 0 ? 22 : 11; 
             ctx.lineTo(Math.cos(i * Math.PI / 5) * r, Math.sin(i * Math.PI / 5) * r); 
         }
         ctx.fill(); 
         ctx.restore();
     });
 
-    // Draw Fish
+    // Draw Fishes
     fishes.forEach(f => {
         ctx.save(); 
-        ctx.shadowBlur = 30; 
-        ctx.shadowColor = "#FFB7B7";
-        ctx.drawImage(assets.fish, f.x-45, f.y-45 + Math.sin(f.t*5)*20, 90, 90); 
+        ctx.shadowBlur = 30; ctx.shadowColor = "#FFB7B7";
+        ctx.drawImage(assets.fish, f.x-45, f.y-45 + Math.sin(f.t*6)*25, 90, 90); 
         ctx.restore();
     });
 
-    // Draw Shatter Particles
-    particles.forEach(p => {
-        ctx.save(); 
-        ctx.globalAlpha = p.life; 
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size); 
-        ctx.restore();
-    });
-
-    // Draw Magical Power Bubble
+    // Draw Power Bubble
     if (activePower) {
         ctx.save();
         let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
-        let pulse = Math.sin(Date.now() * 0.005) * 8;
-        let flicker = pTimer < 2.5 ? (Math.sin(Date.now() * 0.02) + 1) / 4 : 0.35;
+        let pulse = Math.sin(Date.now() * 0.005) * 10;
+        let flicker = pTimer < 2.5 ? (Math.sin(Date.now() * 0.03) + 1) / 4 : 0.4;
         
         ctx.translate(catX, catY);
         ctx.globalCompositeOperation = 'screen';
         
-        // Radial Aura
-        let grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 105 + pulse);
+        let grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 110 + pulse);
         grad.addColorStop(0, `rgba(${col}, 0)`);
         grad.addColorStop(0.7, `rgba(${col}, ${flicker})`);
         grad.addColorStop(1, `rgba(${col}, 0)`);
         
         ctx.fillStyle = grad;
-        ctx.beginPath(); 
-        ctx.arc(0, 0, 115 + pulse, 0, Math.PI * 2); 
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 120 + pulse, 0, Math.PI * 2); ctx.fill();
         
-        // Shimmering Orbit
         ctx.strokeStyle = `rgba(${col}, ${flicker + 0.2})`;
-        ctx.lineWidth = 3; 
-        ctx.setLineDash([12, 18]);
-        ctx.beginPath(); 
-        ctx.arc(0, 0, 88 + pulse/2, 0, Math.PI * 2); 
-        ctx.stroke();
+        ctx.lineWidth = 4; ctx.setLineDash([15, 20]);
+        ctx.beginPath(); ctx.arc(0, 0, 90 + pulse/2, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
     }
 
-    // Draw Player Cat
+    // Draw Player
     ctx.save(); 
     ctx.translate(catX, catY); 
-    ctx.rotate(catRoll); 
-    ctx.drawImage(assets.cat, -50, -50, 100, 100); 
+    ctx.rotate(catRoll + hoverSpin); 
+    ctx.drawImage(assets.cat, -55, -55, 110, 110); 
     ctx.restore();
     
     ctx.restore();
@@ -452,8 +576,9 @@ function gameOver() {
     document.getElementById('ui-layer').style.display = 'none';
 }
 
-/** * INTERACTION LOGIC 
- */
+/** ***************************************************
+ * EVENT LISTENERS & LOOP
+ *****************************************************/
 document.getElementById('start-trigger').onclick = () => {
     bgm[0].play(); 
     sfxMeow.play(); 
@@ -462,19 +587,11 @@ document.getElementById('start-trigger').onclick = () => {
     document.getElementById('ui-layer').style.display = 'block';
 };
 
-document.getElementById('retry-trigger').onclick = () => {
-    location.reload();
-};
+document.getElementById('retry-trigger').onclick = () => location.reload();
 
-window.addEventListener('mousedown', () => { 
-    if(gameState === 'PLAY') catV = CONFIG.jump; 
-});
-
+window.addEventListener('mousedown', () => { if(gameState === 'PLAY') catV = CONFIG.jump; });
 window.addEventListener('touchstart', (e) => { 
-    if(gameState === 'PLAY') { 
-        e.preventDefault(); 
-        catV = CONFIG.jump; 
-    } 
+    if(gameState === 'PLAY') { e.preventDefault(); catV = CONFIG.jump; } 
 }, { passive: false });
 
 function loop(t) {
@@ -485,7 +602,6 @@ function loop(t) {
     requestAnimationFrame(loop);
 }
 
-// Initial background setting
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";
 requestAnimationFrame(loop);
 </script>

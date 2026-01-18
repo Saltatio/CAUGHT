@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CAUGHT! - Full Master Edition</title>
+    <title>CAUGHT! - Master Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -59,7 +59,7 @@
             height: 100%; 
         }
         
-        /* --- UI ELEMENTS --- */
+        /* --- UI LAYER --- */
         #ui-layer { 
             position: absolute; 
             top: 30px; 
@@ -80,7 +80,7 @@
 
         #power-indicator { 
             color: var(--gold); 
-            font-size: 24px; 
+            font-size: 22px; 
             text-transform: uppercase; 
             margin-top: 5px; 
             opacity: 0; 
@@ -89,24 +89,24 @@
             font-weight: 700; 
         }
 
-        #milestone-text { 
-            position: absolute; 
-            top: 120px; 
-            width: 100%; 
-            color: var(--blue); 
-            font-size: 32px; 
-            font-weight: 700; 
-            opacity: 0; 
-            transition: opacity 0.5s, transform 0.5s; 
-            transform: translateY(20px);
-            text-shadow: var(--text-shadow); 
-            text-align: center; 
-            z-index: 10; 
+        /* --- MILESTONE PROGRESS BAR --- */
+        #progress-container { 
+            width: 200px; 
+            height: 14px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            margin: 15px auto; 
+            position: relative; 
+            overflow: hidden; 
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        #milestone-text.visible {
-            opacity: 1;
-            transform: translateY(0px);
+        #progress-bar { 
+            width: 0%; 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--blue), var(--gold)); 
+            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
 
         /* --- OVERLAYS --- */
@@ -127,9 +127,6 @@
 
         h1 { color: white; font-size: 70px; margin: 0 0 10px 0; text-shadow: var(--text-shadow); }
         h2 { color: white; font-size: 55px; margin: 0; text-shadow: var(--text-shadow); }
-        .quote { color: rgba(255,255,255,0.9); font-size: 24px; margin: 15px 0; font-style: italic; text-shadow: var(--text-shadow); }
-        
-        .selection-label { color: rgba(255,255,255,0.9); font-size: 20px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
         
         .choice-btn { 
             padding: 12px 24px; 
@@ -142,45 +139,34 @@
             font-size: 20px; 
             transition: 0.3s; 
         }
-        .choice-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: translateY(-3px); }
+
+        .choice-btn.active { 
+            border-color: var(--gold); 
+            background: rgba(255, 215, 0, 0.3); 
+            transform: translateY(-3px); 
+        }
         
         .cat-btn { 
-            width: 100px; 
-            height: 100px; 
-            border-radius: 50%; 
-            border: 3px solid transparent; 
-            transition: 0.4s; 
-            padding: 10px; 
-            background: rgba(255,255,255,0.1); 
-            overflow: hidden; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100px; height: 100px; border-radius: 50%; border: 3px solid transparent; 
+            transition: 0.4s; padding: 10px; background: rgba(255,255,255,0.1); 
+            overflow: hidden; display: flex; align-items: center; justify-content: center; 
         }
-        .cat-btn img { width: 100%; height: 100%; object-fit: contain; transition: 0.5s; }
-        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); transform: scale(1.1); }
-        
+        .cat-btn img { width: 100%; height: 100%; object-fit: contain; }
+        .cat-btn.active { border-color: var(--gold); background: rgba(255, 215, 0, 0.3); }
+
         .action-btn { 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            white-space: nowrap; 
-            padding: 16px 50px; 
-            font-size: 28px; 
-            border-radius: 50px; 
-            border: none; 
-            font-family: inherit; 
-            cursor: pointer; 
-            background: white; 
-            color: #111; 
-            margin-top: 30px; 
-            transition: 0.3s; 
-            font-weight: 700; 
+            display: inline-flex; align-items: center; justify-content: center; 
+            padding: 16px 50px; font-size: 28px; border-radius: 50px; border: none; 
+            font-family: inherit; cursor: pointer; background: white; color: #111; 
+            margin-top: 30px; transition: 0.3s; font-weight: 700; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
         }
-        .action-btn:hover { transform: scale(1.05); background: var(--gold); }
 
-        #hi-score-box { background: rgba(0,0,0,0.6); padding: 10px 35px; border-radius: 30px; color: var(--gold); font-size: 22px; margin-top: 20px; border: 1px solid rgba(255,215,0,0.3); }
+        #hi-score-box { 
+            background: rgba(0,0,0,0.6); padding: 10px 35px; border-radius: 30px; 
+            color: var(--gold); font-size: 22px; margin-top: 20px; border: 1px solid rgba(255,215,0,0.3); 
+        }
+
         #end-overlay { display: none; }
         #end-overlay.visible { display: flex; }
     </style>
@@ -190,20 +176,19 @@
         <div id="bg-layer"></div>
         <div id="ui-layer">
             <div class="score-text" id="star-display">0</div>
+            <div id="progress-container"><div id="progress-bar"></div></div>
             <div id="power-indicator">SHIELD ACTIVE</div>
-            <div id="milestone-text">30 POINTS REACHED!</div>
         </div>
         <canvas id="gameCanvas"></canvas>
 
         <div id="menu-overlay" class="overlay">
             <h1>CAUGHT!</h1>
-            <p class="selection-label">Select Realm</p>
+            <p style="color:white; text-transform:uppercase; letter-spacing:1px;">Select Realm</p>
             <div style="display:flex; gap:15px; margin-bottom: 30px;" id="world-select">
                 <button class="choice-btn active" onclick="setWorld('day.png', this)">Dusk</button>
                 <button class="choice-btn" onclick="setWorld('afternoon.png', this)">Afternoon</button>
                 <button class="choice-btn" onclick="setWorld('evening.png', this)">Evening</button>
             </div>
-            <p class="selection-label">Select Companion</p>
             <div style="display:flex; gap:20px;" id="cat-select">
                 <button class="choice-btn cat-btn active" onclick="setCat('cat.png', this)"><img src="cat.png"></button>
                 <button class="choice-btn cat-btn" onclick="setCat('cat_black.png', this)"><img src="cat_black.png"></button>
@@ -214,10 +199,9 @@
 
         <div id="end-overlay" class="overlay">
             <h2>Caught!</h2>
-            <div class="quote">"Time spent with cats is never wasted."</div>
-            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.3); margin: 20px 0;">0</div>
+            <div id="final-stats" style="font-size: 110px; color: white; line-height: 1; margin: 20px 0;">0</div>
             <div id="hi-score-box">BEST SCORE: 0</div>
-            <button class="action-btn" id="retry-trigger">More Bonding Time ❤️</button>
+            <button class="action-btn" id="retry-trigger">Retry ❤️</button>
         </div>
     </div>
 
@@ -229,21 +213,19 @@ const CONFIG = {
     gravity: 1080, 
     jump: -390, 
     startSpeed: 240, 
-    maxSpeed: 480,
+    maxSpeed: 480, 
     speedInc: 15,
     minPowerDur: 8, 
     maxPowerDur: 14, 
-    magnetRange: 420,
-    baseHitbox: 34,
-    bubbleBuffer: 0.65 
+    magnetRange: 420, 
+    baseHitbox: 34 
 };
 
 /** ***************************************************
- * ASSETS & GLOBAL STATE
+ * GLOBALS & ASSETS
  *****************************************************/
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
 const assets = { paw: new Image(), fish: new Image(), cat: new Image() };
 assets.paw.src = 'paw.png'; 
 assets.fish.src = 'fish.png'; 
@@ -260,7 +242,7 @@ let activePower = null, pTimer = 0, fishQueued = false, shake = 0;
 let mouseX = 0, mouseY = 0, hoverSpin = 0;
 
 /** ***************************************************
- * INITIALIZATION & INPUT
+ * INITIALIZATION & UI CONTROLS
  *****************************************************/
 function resize() { 
     W = window.innerWidth; 
@@ -269,7 +251,8 @@ function resize() {
     canvas.height = H; 
     catY = H/2; 
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize); 
+resize();
 
 window.addEventListener('mousemove', (e) => { 
     mouseX = e.clientX; 
@@ -277,111 +260,84 @@ window.addEventListener('mousemove', (e) => {
 });
 
 function setWorld(s, e) { 
-    document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#world-select .choice-btn').forEach(b => b.classList.remove('active')); 
     e.classList.add('active'); 
-    document.getElementById('bg-layer').style.backgroundImage = `url(${s})`;
+    document.getElementById('bg-layer').style.backgroundImage = `url(${s})`; 
 }
 
-function setCat(s, e) {
-    document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active'));
+function setCat(s, e) { 
+    document.querySelectorAll('#cat-select .cat-btn').forEach(b => b.classList.remove('active')); 
     e.classList.add('active'); 
-    assets.cat.src = s;
+    assets.cat.src = s; 
 }
 
 /** ***************************************************
- * CORE LOGIC: POWER-UPS & MILESTONES
+ * VISUAL EFFECTS (BURST & PARTICLES)
  *****************************************************/
-function handleMilestones() {
-    // Check for every 10 points
-    if (starsCount > 0 && starsCount % 10 === 0) {
-        fishQueued = true; // Ensures the next paw set has a fish
-        
-        // Show milestone text
-        const mText = document.getElementById('milestone-text');
-        mText.innerText = `${starsCount} POINTS REACHED!`;
-        mText.classList.add('visible');
-        setTimeout(() => mText.classList.remove('visible'), 2500);
+function createStrongBurst(x, y) {
+    // Large circle expansion
+    bursts.push({ x, y, r: 10, a: 1.5, speed: 750 });
+    
+    // Debris particles
+    for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const force = Math.random() * 900 + 200;
+        particles.push({
+            x, y, 
+            vx: Math.cos(angle) * force, 
+            vy: Math.sin(angle) * force,
+            life: 1.2, 
+            size: Math.random() * 8 + 4, 
+            color: i % 2 === 0 ? '#00F2FF' : '#FFFFFF'
+        });
     }
-}
-
-function assignPowerUp() {
-    let pool = ['SHIELD', 'MAGNET'];
-    
-    // Logic: Only allow SLOW after 25 points
-    if (starsCount >= 25) {
-        pool.push('SLOW');
-    }
-
-    // Logic: Random selection with repetition constraint (max 2 in a row)
-    let choice;
-    let attempts = 0;
-    
-    do {
-        choice = pool[Math.floor(Math.random() * pool.length)];
-        attempts++;
-    } while (
-        lastPowerUps.length >= 2 && 
-        lastPowerUps[0] === choice && 
-        lastPowerUps[1] === choice && 
-        attempts < 10
-    );
-
-    activePower = choice;
-    lastPowerUps.push(choice);
-    if (lastPowerUps.length > 2) lastPowerUps.shift();
-
-    // Scale duration with score
-    pTimer = Math.min(CONFIG.minPowerDur + Math.floor(starsCount/25)*2, CONFIG.maxPowerDur);
-    
-    const pInd = document.getElementById('power-indicator');
-    pInd.innerText = `${activePower} ACTIVE`;
-    pInd.style.opacity = 1;
 }
 
 /** ***************************************************
- * CORE UPDATE LOOP
+ * CORE GAME LOGIC
  *****************************************************/
 function update(dt) {
     if (gameState !== 'PLAY') return;
 
-    // --- BGM ENGINE: TRANSITIONS AT 28/30, 58/60, 88/90 ---
+    // --- BGM ENGINE: GRADUAL FADE & CLEAN START ---
     let currentTrack = bgm[currentSongIdx];
-    let fadePoints = [28, 58, 88];
-    let switchPoints = [30, 60, 90];
-
-    // Fade preceding track at 2 points before milestone
-    if (fadePoints.includes(starsCount)) {
-        // Linearly decrease volume over time during the "27 to 29" point window
-        currentTrack.volume = Math.max(0, currentTrack.volume - (dt * 0.35));
+    
+    // Fade track at every 28th point (28, 58, 88)
+    if ([28, 58, 88].includes(starsCount)) {
+        currentTrack.volume = Math.max(0, currentTrack.volume - (dt * 0.45));
     }
-
-    // Immediate swap at the milestone
-    if (switchPoints.includes(starsCount) && currentSongIdx < 2) {
+    
+    // Switch to new track from start at every 30th point (30, 60, 90)
+    if ([30, 60, 90].includes(starsCount) && currentSongIdx < 2) {
         if (!currentTrack.paused) {
-            currentTrack.pause();
-            currentTrack.currentTime = 0;
+            currentTrack.pause(); 
+            currentTrack.currentTime = 0; // Reset old track
             currentSongIdx++;
-            bgm[currentSongIdx].volume = 0.4;
+            bgm[currentSongIdx].currentTime = 0; // Ensure fresh start
+            bgm[currentSongIdx].volume = 0.4; 
             bgm[currentSongIdx].play();
         }
     }
 
-    // --- INTERACTIVE SPIN MATH ---
-    let dx = catX - mouseX;
-    let dy = catY - mouseY;
-    let distToMouse = Math.sqrt(dx*dx + dy*dy);
-    
-    // Cat spins faster as mouse approaches
-    if (distToMouse < 200) {
-        let intensity = (1 - distToMouse / 200);
-        hoverSpin += dt * 8 * intensity;
-    } else {
-        hoverSpin *= 0.96; // Friction to slow spin down
+    // --- HITBOX CALCULATOR ---
+    let hitSize = CONFIG.baseHitbox;
+    if (activePower === 'SHIELD') {
+        hitSize = 88; // Hitbox expands to bubble edge
+    } else if (activePower === 'MAGNET' || activePower === 'SLOW') {
+        hitSize = CONFIG.baseHitbox * 0.80; // Forgiving: 20% smaller hitbox
     }
 
-    // --- SPEED & POWER DURATION ---
+    // --- INTERACTIVE SPIN MATH ---
+    let dist = Math.hypot(catX - mouseX, catY - mouseY);
+    if (dist < 250) {
+        hoverSpin += dt * 10 * (1 - dist/250); 
+    } else {
+        hoverSpin *= 0.95; 
+    }
+
+    // --- SPEED CONTROL ---
     let speed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount/20) * CONFIG.speedInc), CONFIG.maxSpeed);
-    if (activePower === 'SLOW') speed *= 0.55;
+    if (activePower === 'SLOW') speed *= 0.50; // Slow power-up effect
     
     if (pTimer > 0) { 
         pTimer -= dt; 
@@ -390,41 +346,19 @@ function update(dt) {
             document.getElementById('power-indicator').style.opacity = 0; 
         }
     }
+    if (shake > 0) shake -= dt * 60;
 
-    if (shake > 0) shake -= dt * 50;
-
-    // --- SPAWNING LOGIC ---
-    // Spawn new paws when the last set moves far enough
-    if (paws.length === 0 || (W - paws[paws.length-1].x) > 700) {
-        let h = Math.random() * (H - 520) + 160;
-        let gap = (starsCount < 15) ? 260 : (Math.random() * 70 + 180);
-        paws.push({ x: W + 250, yT: h, yB: h + gap, hit: false });
-        
-        // Ensure fish spawns immediately upon milestone
-        if (fishQueued) { 
-            fishes.push({ x: W + 600, y: h + (gap/2), t: 0 }); 
-            fishQueued = false; 
-        } else {
-            // Random star spawn
-            stars.push({ x: W + 600, y: h + (gap/2), type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rot: 0 });
-        }
-    }
-
-    // --- COLLISION PHYSICS ---
-    let hitSize = activePower ? (CONFIG.baseHitbox * CONFIG.bubbleBuffer) : CONFIG.baseHitbox;
-
-    // Paw Collisions
+    // --- PAW PHYSICS ---
     for (let i = paws.length - 1; i >= 0; i--) {
-        let p = paws[i];
+        let p = paws[i]; 
         p.x -= speed * dt;
         
-        // Precision hitbox check
         let isOverlappingX = (catX + hitSize > p.x + 180) && (catX - hitSize < p.x + 220);
         if (!p.hit && isOverlappingX) {
             if (catY - hitSize < p.yT || catY + hitSize > p.yB) {
                 if (activePower === 'SHIELD') { 
-                    bursts.push({ x: catX, y: catY, r: 80, a: 1 });
-                    shake = 20;
+                    createStrongBurst(catX, catY);
+                    shake = 30; 
                     p.hit = true; 
                     activePower = null; 
                     pTimer = 0; 
@@ -438,55 +372,98 @@ function update(dt) {
         if (p.x < -500) paws.splice(i, 1);
     }
 
-    // Star Collection & Magnetism
+    // --- STAR PHYSICS & MAGNETIC FIELD ---
     for (let i = stars.length - 1; i >= 0; i--) {
-        let s = stars[i];
-        s.x -= speed * dt; 
-        s.rot += dt * 3;
-
-        if (activePower === 'MAGNET' && Math.hypot(catX - s.x, catY - s.y) < CONFIG.magnetRange) {
+        let s = stars[i]; 
+        s.x -= speed * dt;
+        let distToStar = Math.hypot(catX - s.x, catY - s.y);
+        
+        let currentRotSpeed = 3; // Default rotation
+        
+        if (activePower === 'MAGNET' && distToStar < CONFIG.magnetRange) {
             let angle = Math.atan2(catY - s.y, catX - s.x);
-            s.x += Math.cos(angle) * 650 * dt;
-            s.y += Math.sin(angle) * 650 * dt;
+            s.x += Math.cos(angle) * 320 * dt; // Slowly pull in
+            s.y += Math.sin(angle) * 320 * dt;
+            currentRotSpeed = 15; // Rapid rotation when caught in field
         }
+        s.rot += dt * currentRotSpeed;
 
-        if (Math.hypot(catX - s.x, catY - s.y) < 85) {
+        if (distToStar < 85) {
             starsCount += (s.type === 'BLUE' ? 2 : 1);
-            handleMilestones();
+            if (starsCount > 0 && starsCount % 10 === 0) fishQueued = true;
             stars.splice(i, 1); 
             updateUI();
         } else if (s.x < -150) stars.splice(i, 1);
     }
 
-    // Fish Collection
+    // --- FISH SPAWNING ---
     for (let i = fishes.length - 1; i >= 0; i--) {
-        let f = fishes[i];
-        f.x -= speed * dt; 
-        f.t += dt;
-        let floatingY = f.y + Math.sin(f.t * 6) * 25;
-        
-        if (Math.hypot(catX - f.x, catY - floatingY) < 95) {
-            assignPowerUp();
+        let f = fishes[i]; f.x -= speed * dt; f.t += dt;
+        if (Math.hypot(catX - f.x, catY - (f.y + Math.sin(f.t*6)*25)) < 95) {
+            assignPowerUp(); 
             fishes.splice(i, 1);
         } else if (f.x < -150) fishes.splice(i, 1);
     }
 
-    // --- VFX UPDATE ---
-    bursts.forEach((b, i) => { b.r += 400 * dt; b.a -= 2 * dt; if(b.a <= 0) bursts.splice(i, 1); });
+    // --- GENERATION ENGINE ---
+    if (paws.length === 0 || (W - paws[paws.length-1].x) > 750) {
+        let h = Math.random() * (H - 520) + 160;
+        let gap = (starsCount < 15) ? 270 : (Math.random() * 60 + 190);
+        paws.push({ x: W + 250, yT: h, yB: h + gap, hit: false });
+        
+        if (fishQueued) { 
+            fishes.push({ x: W + 600, y: h + (gap/2), t: 0 }); 
+            fishQueued = false; 
+        } else { 
+            stars.push({ x: W + 600, y: h + (gap/2), type: Math.random() > 0.85 ? 'BLUE' : 'GOLD', rot: 0 }); 
+        }
+    }
 
-    // --- CAT PHYSICS ---
+    // --- VFX UPDATES ---
+    particles.forEach((p, i) => { 
+        p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; 
+        if(p.life <= 0) particles.splice(i, 1); 
+    });
+    bursts.forEach((b, i) => { 
+        b.r += b.speed * dt; b.a -= 1.8 * dt; 
+        if(b.a <= 0) bursts.splice(i, 1); 
+    });
+
+    // --- PLAYER PHYSICS ---
     catV += CONFIG.gravity * dt; 
     catY += catV * dt;
-    catRoll += 3.5 * dt;
-
+    catRoll += 3.8 * dt;
     if (catY > H || catY < 0) gameOver();
 }
 
 /** ***************************************************
- * RENDER ENGINE
+ * POWER-UP ENGINE
+ *****************************************************/
+function assignPowerUp() {
+    let pool = ['SHIELD', 'MAGNET']; 
+    if (starsCount >= 25) pool.push('SLOW');
+    
+    let choice; 
+    do { 
+        choice = pool[Math.floor(Math.random() * pool.length)]; 
+    } while (lastPowerUps.length >= 2 && lastPowerUps.every(v => v === choice));
+    
+    activePower = choice; 
+    lastPowerUps.push(choice); 
+    if (lastPowerUps.length > 2) lastPowerUps.shift();
+    
+    pTimer = Math.min(CONFIG.minPowerDur + Math.floor(starsCount/25)*2, CONFIG.maxPowerDur);
+    
+    const pInd = document.getElementById('power-indicator');
+    pInd.innerText = `${activePower} ACTIVE`;
+    pInd.style.opacity = 1;
+}
+
+/** ***************************************************
+ * RENDERING ENGINE
  *****************************************************/
 function draw() {
-    ctx.save();
+    ctx.save(); 
     if (shake > 0) ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
     ctx.clearRect(0, 0, W, H);
     
@@ -495,8 +472,7 @@ function draw() {
         ctx.save(); 
         if(activePower === 'SHIELD' && !p.hit) ctx.globalAlpha = 0.5;
         ctx.drawImage(assets.paw, p.x, p.yB, 400, 800);
-        ctx.translate(p.x + 200, p.yT); 
-        ctx.scale(1, -1); 
+        ctx.translate(p.x + 200, p.yT); ctx.scale(1, -1); 
         ctx.drawImage(assets.paw, -200, 0, 400, 800); 
         ctx.restore();
     });
@@ -506,49 +482,51 @@ function draw() {
         let col = s.type === 'BLUE' ? '#00F2FF' : '#FFD700';
         ctx.save(); 
         ctx.shadowBlur = 20; ctx.shadowColor = col;
-        ctx.translate(s.x, s.y); 
-        ctx.rotate(s.rot);
-        ctx.fillStyle = col; 
-        ctx.beginPath();
+        ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+        ctx.fillStyle = col; ctx.beginPath();
         for(let i=0; i<10; i++) { 
             let r = i % 2 === 0 ? 22 : 11; 
             ctx.lineTo(Math.cos(i * Math.PI / 5) * r, Math.sin(i * Math.PI / 5) * r); 
         }
-        ctx.fill(); 
-        ctx.restore();
+        ctx.fill(); ctx.restore();
     });
 
     // Draw Fishes
     fishes.forEach(f => {
         ctx.save(); 
-        ctx.shadowBlur = 30; ctx.shadowColor = "#FFB7B7";
+        ctx.shadowBlur = 35; ctx.shadowColor = "#FFB7B7";
         ctx.drawImage(assets.fish, f.x-45, f.y-45 + Math.sin(f.t*6)*25, 90, 90); 
         ctx.restore();
     });
 
-    // Draw Power Bubble
+    // Draw Power Effects
     if (activePower) {
         ctx.save();
         let col = activePower === 'SHIELD' ? '255,255,255' : (activePower === 'MAGNET' ? '255,215,0' : '0,242,255');
-        let pulse = Math.sin(Date.now() * 0.005) * 10;
-        let flicker = pTimer < 2.5 ? (Math.sin(Date.now() * 0.03) + 1) / 4 : 0.4;
-        
-        ctx.translate(catX, catY);
-        ctx.globalCompositeOperation = 'screen';
-        
-        let grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 110 + pulse);
-        grad.addColorStop(0, `rgba(${col}, 0)`);
-        grad.addColorStop(0.7, `rgba(${col}, ${flicker})`);
+        let pulse = Math.sin(Date.now() * 0.006) * 12;
+        ctx.translate(catX, catY); ctx.globalCompositeOperation = 'screen';
+        let grad = ctx.createRadialGradient(0, 0, 50, 0, 0, 115 + pulse);
+        grad.addColorStop(0, `rgba(${col}, 0)`); 
+        grad.addColorStop(0.7, `rgba(${col}, 0.45)`); 
         grad.addColorStop(1, `rgba(${col}, 0)`);
-        
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(0, 0, 120 + pulse, 0, Math.PI * 2); ctx.fill();
-        
-        ctx.strokeStyle = `rgba(${col}, ${flicker + 0.2})`;
-        ctx.lineWidth = 4; ctx.setLineDash([15, 20]);
-        ctx.beginPath(); ctx.arc(0, 0, 90 + pulse/2, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, 125 + pulse, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
+
+    // Draw Burst Rings
+    bursts.forEach(b => {
+        ctx.save(); 
+        ctx.strokeStyle = `rgba(255,255,255,${b.a})`; 
+        ctx.lineWidth = 6; 
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke(); 
+        ctx.restore();
+    });
+
+    // Draw Particles
+    particles.forEach(p => { 
+        ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color; 
+        ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore(); 
+    });
 
     // Draw Player
     ctx.save(); 
@@ -560,8 +538,16 @@ function draw() {
     ctx.restore();
 }
 
+/** ***************************************************
+ * UI & GAME CONTROL
+ *****************************************************/
 function updateUI() { 
     document.getElementById('star-display').innerText = starsCount; 
+    // Progress bar fills every 10 points
+    let progressPercent = (starsCount % 10) * 10;
+    // If progress is 0 but we just scored, keep it full for a moment
+    if (progressPercent === 0 && starsCount > 0) progressPercent = 100;
+    document.getElementById('progress-bar').style.width = progressPercent + "%";
 }
 
 function gameOver() {
@@ -576,15 +562,11 @@ function gameOver() {
     document.getElementById('ui-layer').style.display = 'none';
 }
 
-/** ***************************************************
- * EVENT LISTENERS & LOOP
- *****************************************************/
-document.getElementById('start-trigger').onclick = () => {
-    bgm[0].play(); 
-    sfxMeow.play(); 
-    gameState = 'PLAY';
-    document.getElementById('menu-overlay').style.display = 'none';
-    document.getElementById('ui-layer').style.display = 'block';
+document.getElementById('start-trigger').onclick = () => { 
+    bgm[0].play(); sfxMeow.play(); gameState = 'PLAY'; 
+    document.getElementById('menu-overlay').style.display = 'none'; 
+    document.getElementById('ui-layer').style.display = 'block'; 
+    updateUI();
 };
 
 document.getElementById('retry-trigger').onclick = () => location.reload();
@@ -594,12 +576,12 @@ window.addEventListener('touchstart', (e) => {
     if(gameState === 'PLAY') { e.preventDefault(); catV = CONFIG.jump; } 
 }, { passive: false });
 
-function loop(t) {
+function loop(t) { 
     let dt = (t - lastTime) / 1000; 
-    lastTime = t;
+    lastTime = t; 
     update(Math.min(dt, 0.1)); 
     draw(); 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop); 
 }
 
 document.getElementById('bg-layer').style.backgroundImage = "url('day.png')";

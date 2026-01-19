@@ -305,13 +305,13 @@ const CONFIG = {
     gravity: 1150, 
     jumpForce: -415, 
     startSpeed: 240, 
-    maxSpeed: 480, 
+    maxSpeed: 480, // Restored original max speed cap
     acceleration: 15,
-    powerDurationMin: 8, 
-    powerDurationMax: 14, 
+    powerDurationMin: 8, // Requirements: starts at 8s
+    powerDurationMax: 16, // Requirements: max duration 16s
     magnetEffectRange: 420, 
     collisionPadding: 34,
-    spawnInterval: 780 
+    spawnInterval: 650 // Requirement: slightly faster (was 780)
 };
 
 /**
@@ -417,7 +417,6 @@ function updateEngine(deltaTime) {
     // MENU STATE ANIMATION
     if (gameState !== 'PLAY') {
         const distanceToCatCenter = Math.hypot(catXPosition - cursorX, catY - cursorY);
-        // Slowly rotates cat, speeds up significantly when cursor is nearby
         const hoverIntensity = (distanceToCatCenter < 350) ? 0.95 : 0.25;
         menuHoverRotation += deltaTime * hoverIntensity;
         return;
@@ -426,7 +425,7 @@ function updateEngine(deltaTime) {
     // --- BGM CYCLE LOGIC ---
     const currentTrack = bgm[activeSongIndex];
     
-    // Gradual Fade: Start fading 5 points before the switch
+    // Gradual Fade Logic
     if (starsCount >= 25 && starsCount < 30 && activeSongIndex === 0) {
         currentTrack.volume = Math.max(0, 0.45 - ((starsCount - 25) * 0.09));
     } 
@@ -434,7 +433,7 @@ function updateEngine(deltaTime) {
         currentTrack.volume = Math.max(0, 0.45 - ((starsCount - 55) * 0.09));
     }
 
-    // Full Track Switch at 30th and 60th point milestones
+    // Full Track Switch
     if (starsCount >= 30 && activeSongIndex === 0) {
         currentTrack.pause();
         activeSongIndex = 1;
@@ -446,14 +445,11 @@ function updateEngine(deltaTime) {
     }
 
     // --- CHARACTER & SPEED CALCULATIONS ---
-    
-    /**
-     * MODIFICATION: HITBOX FORGIVENESS
-     * Shield hitbox increased from 90 to 110 for better player protection.
-     */
-    let currentHitbox = (activePowerupType === 'SHIELD') ? 110 : CONFIG.collisionPadding;
+    // REQUIREMENT: Alter hitbox for shield so it only bursts when the cat itself touches paws
+    let currentHitbox = CONFIG.collisionPadding; 
     catRotation += 1.3 * deltaTime; 
 
+    // REQUIREMENT: Speed of game stick to gradual increase every 20 points
     let currentMoveSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount / 20) * CONFIG.acceleration), CONFIG.maxSpeed);
     if (activePowerupType === 'SLOW') currentMoveSpeed *= 0.55;
     
@@ -494,7 +490,6 @@ function updateEngine(deltaTime) {
             }
         }
         
-        // Cleanup offscreen
         if (obs.x < -450) obstacles.splice(i, 1);
     }
 
@@ -515,7 +510,6 @@ function updateEngine(deltaTime) {
         
         if (dist < 82) { 
             starsCount += (star.type === 'BLUE' ? 2 : 1); 
-            // Queue a fish every 10 points
             if (starsCount > 0 && starsCount % 10 === 0) isFishPending = true; 
             pickups.splice(i, 1); 
             refreshUI(); 
@@ -548,10 +542,12 @@ function updateEngine(deltaTime) {
     }
 
     // --- PROCEDURAL GENERATION ---
+    // REQUIREMENT: Spawning slightly faster + ensure they don't overlap
+    // Interval check ensures we don't spawn a new obstacle if the previous one is too close
     if (obstacles.length === 0 || (W - obstacles[obstacles.length - 1].x) > CONFIG.spawnInterval) {
         const verticalCenter = Math.random() * (H - 550) + 180;
         
-        // GAP CONSTRAINT LOGIC
+        // GAP CONSTRAINT LOGIC (Restored from Original Source)
         const dynamicGap = (starsCount <= 10) ? 220 : (Math.random() * 80 + 170);
         
         obstacles.push({ 
@@ -645,28 +641,29 @@ function renderFrame() {
     });
 
     // 5. Draw Active Powerup Aura
+    // REQUIREMENT: Bubble for power up can be smaller + Flicker when expiring
     if (activePowerupType) {
         ctx.save(); 
         ctx.translate(catXPosition, catY); 
         ctx.globalCompositeOperation = 'screen';
-        
-        /**
-         * MODIFICATION: BUBBLE SIZE
-         * Radial gradient radius reduced from 115 to 100.
-         */
-        const gradient = ctx.createRadialGradient(0, 0, 45, 0, 0, 100);
+
+        // FLICKER LOGIC: Flicker when under 3 seconds
+        let flickerAlpha = 1.0;
+        if (powerupTimer < 3) {
+            flickerAlpha = Math.floor(performance.now() / 150) % 2 === 0 ? 0.2 : 1.0;
+        }
+
+        const auraRadius = 88; // REQUIREMENT: Smaller bubble (original was 115)
+        const gradient = ctx.createRadialGradient(0, 0, 45, 0, 0, auraRadius);
         let auraColor = activePowerupType === 'SHIELD' ? '255, 255, 255' : activePowerupType === 'MAGNET' ? '255, 215, 0' : '0, 242, 255';
+        
         gradient.addColorStop(0, `rgba(${auraColor}, 0)`); 
-        gradient.addColorStop(0.75, `rgba(${auraColor}, 0.35)`); 
+        gradient.addColorStop(0.75, `rgba(${auraColor}, ${0.35 * flickerAlpha})`); 
         gradient.addColorStop(1, `rgba(${auraColor}, 0)`);
+        
         ctx.fillStyle = gradient; 
         ctx.beginPath(); 
-        
-        /**
-         * MODIFICATION: BUBBLE SIZE
-         * Arc radius reduced to 100.
-         */
-        ctx.arc(0, 0, 100, 0, Math.PI * 2); 
+        ctx.arc(0, 0, auraRadius, 0, Math.PI * 2); 
         ctx.fill(); 
         ctx.restore();
     }
@@ -690,12 +687,9 @@ function triggerPowerupActivation() {
     
     activePowerupType = availableBuffs[Math.floor(Math.random() * availableBuffs.length)];
     
-    /**
-     * MODIFICATION: DYNAMIC DURATION SCALING
-     * Starts at 8s, increases by 2s every 20 stars, capped at 14s.
-     */
-    let dynamicDuration = 8 + (Math.floor(starsCount / 20) * 2);
-    powerupTimer = Math.min(dynamicDuration, CONFIG.powerDurationMax);
+    // REQUIREMENT: starts at 8s and increase by 2s with every 20 points, max 16s
+    let calculatedDuration = CONFIG.powerDurationMin + (Math.floor(starsCount / 20) * 2);
+    powerupTimer = Math.min(calculatedDuration, CONFIG.powerDurationMax);
     
     const indicator = document.getElementById('power-indicator');
     indicator.innerText = `${activePowerupType} ACTIVE`; 

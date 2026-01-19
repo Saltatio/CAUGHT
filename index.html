@@ -446,7 +446,12 @@ function updateEngine(deltaTime) {
     }
 
     // --- CHARACTER & SPEED CALCULATIONS ---
-    let currentHitbox = (activePowerupType === 'SHIELD') ? 90 : CONFIG.collisionPadding;
+    
+    /**
+     * MODIFICATION: HITBOX FORGIVENESS
+     * Shield hitbox increased from 90 to 110 for better player protection.
+     */
+    let currentHitbox = (activePowerupType === 'SHIELD') ? 110 : CONFIG.collisionPadding;
     catRotation += 1.3 * deltaTime; 
 
     let currentMoveSpeed = Math.min(CONFIG.startSpeed + (Math.floor(starsCount / 20) * CONFIG.acceleration), CONFIG.maxSpeed);
@@ -547,7 +552,6 @@ function updateEngine(deltaTime) {
         const verticalCenter = Math.random() * (H - 550) + 180;
         
         // GAP CONSTRAINT LOGIC
-        // Every 30th point logic ensures difficulty spike, but here we handle the 10-point constant gap rule
         const dynamicGap = (starsCount <= 10) ? 220 : (Math.random() * 80 + 170);
         
         obstacles.push({ 
@@ -645,14 +649,24 @@ function renderFrame() {
         ctx.save(); 
         ctx.translate(catXPosition, catY); 
         ctx.globalCompositeOperation = 'screen';
-        const gradient = ctx.createRadialGradient(0, 0, 45, 0, 0, 115);
+        
+        /**
+         * MODIFICATION: BUBBLE SIZE
+         * Radial gradient radius reduced from 115 to 100.
+         */
+        const gradient = ctx.createRadialGradient(0, 0, 45, 0, 0, 100);
         let auraColor = activePowerupType === 'SHIELD' ? '255, 255, 255' : activePowerupType === 'MAGNET' ? '255, 215, 0' : '0, 242, 255';
         gradient.addColorStop(0, `rgba(${auraColor}, 0)`); 
         gradient.addColorStop(0.75, `rgba(${auraColor}, 0.35)`); 
         gradient.addColorStop(1, `rgba(${auraColor}, 0)`);
         ctx.fillStyle = gradient; 
         ctx.beginPath(); 
-        ctx.arc(0, 0, 115, 0, Math.PI * 2); 
+        
+        /**
+         * MODIFICATION: BUBBLE SIZE
+         * Arc radius reduced to 100.
+         */
+        ctx.arc(0, 0, 100, 0, Math.PI * 2); 
         ctx.fill(); 
         ctx.restore();
     }
@@ -675,7 +689,13 @@ function triggerPowerupActivation() {
     if (starsCount >= 25) availableBuffs.push('SLOW');
     
     activePowerupType = availableBuffs[Math.floor(Math.random() * availableBuffs.length)];
-    powerupTimer = Math.min(CONFIG.powerDurationMin + Math.floor(starsCount / 25) * 2, CONFIG.powerDurationMax);
+    
+    /**
+     * MODIFICATION: DYNAMIC DURATION SCALING
+     * Starts at 8s, increases by 2s every 20 stars, capped at 14s.
+     */
+    let dynamicDuration = 8 + (Math.floor(starsCount / 20) * 2);
+    powerupTimer = Math.min(dynamicDuration, CONFIG.powerDurationMax);
     
     const indicator = document.getElementById('power-indicator');
     indicator.innerText = `${activePowerupType} ACTIVE`; 
